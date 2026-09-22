@@ -1526,7 +1526,7 @@
   loadPlaces();
 
   // ------------------------------------------------------------
-  // Pixel BBQ Game
+  // Pixel BBQ Kitchen — drag, place, cook, serve
   // ------------------------------------------------------------
 
   var canvas = document.getElementById("bbqGame");
@@ -1536,60 +1536,215 @@
   var difficultySelect = document.getElementById("difficultySelect");
   var gameTimeEl = document.getElementById("gameTime");
   var scoreEl = document.getElementById("gameScore");
-  var comboEl = document.getElementById("gameCombo");
+  var servedEl = document.getElementById("gameCombo");
   var heatEl = document.getElementById("heatLevel");
   var messageEl = document.getElementById("gameMessage");
   var guideEl = document.getElementById("ingredientGuide");
 
+  var grillRect = { x: 105, y: 72, w: 520, h: 300 };
+  var hotRect = { x: 220, y: 132, w: 290, h: 185 };
+  var trayRect = { x: 20, y: 402, w: 610, h: 98 };
+  var serveRect = { x: 650, y: 72, w: 130, h: 300 };
+
   var ingredients = [
-    { name: "杏鮑菇", emoji: "🍄", target: 8.8, tolerance: 2.1, base: 80, stars: 1 },
-    { name: "牛小排", emoji: "🥩", target: 6.8, tolerance: 1.45, base: 120, stars: 3 },
-    { name: "豬五花", emoji: "🥓", target: 7.6, tolerance: 1.25, base: 140, stars: 3 },
-    { name: "鮮蝦", emoji: "🦐", target: 5.4, tolerance: 1.05, base: 160, stars: 4 },
-    { name: "麻糬", emoji: "🍡", target: 4.5, tolerance: 0.78, base: 210, stars: 5 },
-    { name: "香腸", emoji: "🌭", target: 8.1, tolerance: 1.15, base: 150, stars: 4 }
+    { name:"牛小排", emoji:"🥩", target:11, tolerance:1.6, base:150, w:72, h:50, method:"快煎翻面", turns:1, preferred:"center", stars:3 },
+    { name:"豬五花", emoji:"🥓", target:10, tolerance:1.45, base:145, w:78, h:42, method:"快煎翻面", turns:1, preferred:"center", stars:3 },
+    { name:"雞腿肉", emoji:"🍗", target:16, tolerance:2.2, base:155, w:68, h:54, method:"兩面慢烤", turns:1, preferred:"edge", stars:3 },
+    { name:"鮮蝦", emoji:"🦐", target:8, tolerance:1.15, base:170, w:60, h:42, method:"快速翻面", turns:1, preferred:"edge", stars:4 },
+    { name:"魷魚", emoji:"🦑", target:9, tolerance:1.25, base:175, w:72, h:55, method:"高火快烤", turns:1, preferred:"center", stars:4 },
+    { name:"干貝", emoji:"🦪", target:7, tolerance:1.05, base:185, w:48, h:48, method:"單面炙燒", turns:0, preferred:"edge", stars:4 },
+    { name:"杏鮑菇", emoji:"🍄", target:14, tolerance:2.6, base:100, w:58, h:58, method:"慢烤旋轉", turns:2, preferred:"edge", stars:2 },
+    { name:"玉米", emoji:"🌽", target:18, tolerance:3.1, base:115, w:88, h:40, method:"多次旋轉", turns:3, preferred:"edge", stars:2 },
+    { name:"櫛瓜", emoji:"🥒", target:12, tolerance:2.2, base:105, w:76, h:38, method:"慢烤旋轉", turns:2, preferred:"edge", stars:2 },
+    { name:"青椒", emoji:"🫑", target:11, tolerance:2.0, base:105, w:54, h:54, method:"均勻翻烤", turns:2, preferred:"edge", stars:2 },
+    { name:"香腸", emoji:"🌭", target:15, tolerance:2.3, base:130, w:86, h:36, method:"滾動烤熟", turns:3, preferred:"edge", stars:3 },
+    { name:"年糕", emoji:"🍡", target:6, tolerance:0.95, base:190, w:58, h:38, method:"極短快烤", turns:1, preferred:"edge", stars:5 },
+    { name:"厚切牛舌", emoji:"🥩", target:8.5, tolerance:1.0, base:240, w:62, h:40, method:"高火快煎", turns:1, preferred:"center", stars:5 },
+    { name:"鯖魚", emoji:"🐟", target:17, tolerance:2.4, base:180, w:96, h:52, method:"邊火慢烤", turns:1, preferred:"edge", stars:4 },
+
+    { name:"A5 和牛骰子", emoji:"🥩", target:7.2, tolerance:0.75, base:360, w:50, h:50, method:"中央極高火", turns:1, preferred:"center", stars:5, hidden:true },
+    { name:"伊勢龍蝦", emoji:"🦞", target:16, tolerance:1.7, base:460, w:105, h:62, method:"邊火雙面慢烤", turns:1, preferred:"edge", stars:5, hidden:true },
+    { name:"帝王蟹腳", emoji:"🦀", target:13, tolerance:1.45, base:420, w:112, h:44, method:"邊火多次旋轉", turns:2, preferred:"edge", stars:5, hidden:true },
+    { name:"黃金麻糬", emoji:"🍡", target:5.2, tolerance:0.55, base:390, w:52, h:40, method:"極短雙面", turns:1, preferred:"edge", stars:5, hidden:true }
   ];
 
-  guideEl.innerHTML = ingredients.map(function (item) {
+  var materials = [
+    { name:"木炭", emoji:"⬛", w:44, h:44, material:"charcoal", description:"放上烤網會提高整體火力" },
+    { name:"冰塊", emoji:"🧊", w:44, h:44, material:"ice", description:"放上烤網短暫降溫，幾秒後融化" },
+    { name:"鋁箔球", emoji:"⚪", w:42, h:42, material:"foil", description:"不會熟，只會佔據烤網空間" },
+    { name:"餐巾紙", emoji:"🧻", w:48, h:48, material:"tissue", description:"丟上烤網會立刻起火" }
+  ];
+
+  var normalIngredients = ingredients.filter(function (item) { return !item.hidden; });
+  var hiddenIngredients = ingredients.filter(function (item) { return item.hidden; });
+
+  guideEl.innerHTML = normalIngredients.map(function (item) {
+    var zone = item.preferred === "center" ? "🔥 中央" : "🌤 邊火";
     return '<div class="ingredient-row">' +
       '<span class="ingredient-icon">' + item.emoji + "</span>" +
-      "<span><strong>" + item.name + "</strong><small>建議翻面 " + item.target.toFixed(1) + " 秒</small></span>" +
+      "<span><strong>" + item.name + "</strong><small>" + zone + " · " + item.method + " · 約 " + item.target.toFixed(0) + " 秒</small></span>" +
       '<span class="stars">' + "★".repeat(item.stars) + "</span>" +
     "</div>";
-  }).join("");
-
-  var game = {
-    running: false,
-    score: 0,
-    combo: 1,
-    startedAt: 0,
-    lastFrame: 0,
-    remaining: 180,
-    pieces: [],
-    nextId: 1,
-    spawnTimer: 0,
-    nextEventAt: 0,
-    eventType: null,
-    eventEndsAt: 0,
-    eventUsedWater: false,
-    animationId: null
-  };
+  }).join("") +
+  '<div class="ingredient-secret"><strong>??? 隱藏食材</strong><span>共 ' + hiddenIngredients.length + ' 種，低機率出現</span></div>';
 
   var difficulty = {
-    easy: { tolerance: 1.32, speed: 0.92, spawn: 3.7, max: 3 },
-    normal: { tolerance: 1, speed: 1, spawn: 3.15, max: 4 },
-    hard: { tolerance: 0.73, speed: 1.12, spawn: 2.45, max: 5 }
+    easy: { tolerance:1.35, speed:0.88, spawn:8.3, maxTray:6, eventGap:28 },
+    normal: { tolerance:1, speed:1, spawn:6.8, maxTray:6, eventGap:23 },
+    hard: { tolerance:0.78, speed:1.12, spawn:5.4, maxTray:7, eventGap:18 }
   };
 
-  var grillCells = [
-    [150, 145], [300, 145], [450, 145], [590, 145],
-    [150, 285], [300, 285], [450, 285], [590, 285]
-  ];
+  var game = {
+    running:false,
+    score:0,
+    served:0,
+    streak:0,
+    bestStreak:0,
+    startedAt:0,
+    lastFrame:0,
+    remaining:180,
+    pieces:[],
+    nextId:1,
+    spawnTimer:0,
+    nextEventAt:0,
+    eventType:null,
+    eventEndsAt:0,
+    eventUsedWater:false,
+    animationId:null,
+    pointer:null,
+    smoke:[]
+  };
+
+  function getCfg() {
+    return difficulty[difficultySelect.value] || difficulty.normal;
+  }
+
+  function traySlots() {
+    return [
+      [65,451],[155,451],[245,451],[335,451],[425,451],[515,451],[595,451]
+    ];
+  }
+
+  function randomItem(forceFood) {
+    var roll = Math.random();
+    if (!forceFood && roll < 0.035) {
+      return materials[Math.floor(Math.random() * materials.length)];
+    }
+    if (!forceFood && roll < 0.065) {
+      return hiddenIngredients[Math.floor(Math.random() * hiddenIngredients.length)];
+    }
+    return normalIngredients[Math.floor(Math.random() * normalIngredients.length)];
+  }
+
+  function makePiece(item) {
+    return {
+      id:game.nextId++,
+      item:item,
+      x:0,
+      y:0,
+      w:item.w,
+      h:item.h,
+      zone:"tray",
+      cook:0,
+      grillTime:0,
+      zoneFitTime:0,
+      turns:0,
+      techniqueError:0,
+      pulse:Math.random() * Math.PI * 2,
+      burnt:false,
+      materialLife:0
+    };
+  }
+
+  function rectForPiece(piece, x, y) {
+    var px = typeof x === "number" ? x : piece.x;
+    var py = typeof y === "number" ? y : piece.y;
+    return {
+      x:px - piece.w / 2,
+      y:py - piece.h / 2,
+      w:piece.w,
+      h:piece.h
+    };
+  }
+
+  function rectContains(outer, inner, pad) {
+    var p = pad || 0;
+    return inner.x >= outer.x + p &&
+      inner.y >= outer.y + p &&
+      inner.x + inner.w <= outer.x + outer.w - p &&
+      inner.y + inner.h <= outer.y + outer.h - p;
+  }
+
+  function overlap(a, b, pad) {
+    var p = pad || 0;
+    return a.x < b.x + b.w + p &&
+      a.x + a.w + p > b.x &&
+      a.y < b.y + b.h + p &&
+      a.y + a.h + p > b.y;
+  }
+
+  function collidesOnGrill(piece, x, y) {
+    var candidate = rectForPiece(piece, x, y);
+    return game.pieces.some(function (other) {
+      if (other.id === piece.id || other.zone !== "grill") return false;
+      return overlap(candidate, rectForPiece(other), 5);
+    });
+  }
+
+  function findTraySlot(piece) {
+    var slots = traySlots();
+    var trayPieces = game.pieces.filter(function (p) {
+      return p.zone === "tray" && p.id !== piece.id;
+    });
+
+    for (var i = 0; i < slots.length; i += 1) {
+      var x = slots[i][0];
+      var y = slots[i][1];
+      var test = rectForPiece(piece, x, y);
+      var blocked = trayPieces.some(function (other) {
+        return overlap(test, rectForPiece(other), 3);
+      });
+      if (!blocked) return { x:x, y:y };
+    }
+    return { x:55 + Math.random() * 535, y:450 };
+  }
+
+  function sendToTray(piece) {
+    var slot = findTraySlot(piece);
+    piece.x = slot.x;
+    piece.y = slot.y;
+    piece.zone = "tray";
+  }
+
+  function spawnPiece(forceFood) {
+    var cfg = getCfg();
+    var trayCount = game.pieces.filter(function (p) { return p.zone === "tray"; }).length;
+    if (trayCount >= cfg.maxTray) return false;
+
+    var piece = makePiece(randomItem(!!forceFood));
+    game.pieces.push(piece);
+    sendToTray(piece);
+
+    if (piece.item.hidden) {
+      messageEl.textContent = "✨ 隱藏食材出現：" + piece.item.name + "！";
+    } else if (piece.item.material) {
+      messageEl.textContent = "❓ 備料盤混入了「" + piece.item.name + "」：" + piece.item.description;
+    }
+    return true;
+  }
+
+  function seedInitialTray() {
+    for (var i = 0; i < 5; i += 1) {
+      spawnPiece(i < 3);
+    }
+  }
 
   function resetGame() {
     game.running = false;
     game.score = 0;
-    game.combo = 1;
+    game.served = 0;
+    game.streak = 0;
+    game.bestStreak = 0;
     game.remaining = 180;
     game.pieces = [];
     game.nextId = 1;
@@ -1597,6 +1752,8 @@
     game.eventType = null;
     game.eventEndsAt = 0;
     game.eventUsedWater = false;
+    game.pointer = null;
+    game.smoke = [];
     if (game.animationId) cancelAnimationFrame(game.animationId);
     game.animationId = null;
     updateHud();
@@ -1608,68 +1765,125 @@
     game.running = true;
     game.startedAt = performance.now();
     game.lastFrame = game.startedAt;
-    game.nextEventAt = 16 + Math.random() * 11;
+    game.nextEventAt = 18 + Math.random() * 10;
+    seedInitialTray();
     startButton.textContent = "重新開始";
     difficultySelect.disabled = true;
-    messageEl.textContent = "開烤！食材接近最佳翻面時間時會出現黃色提示";
-    for (var i = 0; i < 3; i += 1) spawnPiece(i * 0.7);
+    messageEl.textContent = "把備料盤食材拖到烤網；點一下烤網食材可翻面／旋轉，熟了再拖去右側出餐";
     game.animationId = requestAnimationFrame(gameLoop);
   }
 
+  function activeCharcoalCount() {
+    return game.pieces.filter(function (piece) {
+      return piece.zone === "grill" && piece.item.material === "charcoal";
+    }).length;
+  }
+
   function heatMultiplier() {
-    if (game.eventType === "flare") return 1.72;
-    if (game.eventType === "grease") return 1.48;
-    if (game.eventType === "wind") return 0.67;
-    return 1;
+    var mult = 1;
+    if (game.eventType === "flare") mult *= 1.72;
+    if (game.eventType === "grease") mult *= 1.48;
+    if (game.eventType === "wind") mult *= 0.67;
+    mult *= 1 + Math.min(0.45, activeCharcoalCount() * 0.16);
+    return mult;
   }
 
   function heatPercent() {
     return Math.round(heatMultiplier() * 100);
   }
 
-  function spawnPiece(ageOffset) {
-    var cfg = difficulty[difficultySelect.value] || difficulty.normal;
-    if (game.pieces.length >= cfg.max) return;
-
-    var occupied = {};
-    game.pieces.forEach(function (p) { occupied[p.cell] = true; });
-    var free = grillCells.map(function (_, i) { return i; }).filter(function (i) { return !occupied[i]; });
-    if (!free.length) return;
-
-    var cell = free[Math.floor(Math.random() * free.length)];
-    var ingredient = ingredients[Math.floor(Math.random() * ingredients.length)];
-
-    game.pieces.push({
-      id: game.nextId++,
-      item: ingredient,
-      cell: cell,
-      cook: Math.max(0, (ageOffset || 0) * 1000),
-      pulse: Math.random() * Math.PI * 2
-    });
+  function positionHeat(piece) {
+    var r = rectForPiece(piece);
+    var centerOverlap = overlap(r, hotRect, 0);
+    return centerOverlap ? 1.22 : 0.78;
   }
 
-  function triggerEvent(elapsed) {
-    var roll = Math.random();
-    if (roll < 0.42) game.eventType = "flare";
-    else if (roll < 0.72) game.eventType = "grease";
-    else game.eventType = "wind";
+  function currentHeatZone(piece) {
+    return positionHeat(piece) > 1 ? "center" : "edge";
+  }
 
+  function triggerEvent(elapsed, forcedType) {
+    var type = forcedType;
+    if (!type) {
+      var roll = Math.random();
+      if (roll < 0.42) type = "flare";
+      else if (roll < 0.72) type = "grease";
+      else type = "wind";
+    }
+
+    game.eventType = type;
     game.eventUsedWater = false;
-    var duration = game.eventType === "wind" ? 7 : 6;
+    var duration = type === "wind" ? 7 : 6;
     game.eventEndsAt = elapsed + duration;
-    game.nextEventAt = elapsed + 19 + Math.random() * 12;
-    extinguishButton.disabled = game.eventType === "wind";
+    game.nextEventAt = elapsed + getCfg().eventGap + Math.random() * 9;
+    extinguishButton.disabled = type === "wind";
 
-    if (game.eventType === "flare") messageEl.textContent = "🔥 炭火失控！熟成速度大幅上升，可以灑水降火";
-    if (game.eventType === "grease") messageEl.textContent = "💥 油脂滴落！短時間火力暴增";
-    if (game.eventType === "wind") messageEl.textContent = "💨 風勢突變！火力下降，翻面時間會延後";
+    if (type === "flare") messageEl.textContent = "🔥 炭火失控！所有食材加速熟成";
+    if (type === "grease") messageEl.textContent = "💥 油脂滴落！火力突然暴增";
+    if (type === "wind") messageEl.textContent = "💨 風勢突變！火力下降";
   }
 
   function clearEvent(message) {
     game.eventType = null;
     game.eventEndsAt = 0;
+    game.eventUsedWater = false;
     extinguishButton.disabled = true;
     if (message) messageEl.textContent = message;
+  }
+
+  function updateSmoke(dt) {
+    game.smoke.forEach(function (smoke) {
+      smoke.y -= smoke.speed * dt;
+      smoke.x += smoke.drift * dt;
+      smoke.life -= dt;
+      smoke.size += dt * 4;
+    });
+    game.smoke = game.smoke.filter(function (smoke) { return smoke.life > 0; });
+
+    game.pieces.forEach(function (piece) {
+      if (piece.zone !== "grill") return;
+      var smoky = piece.burnt || piece.item.material === "tissue";
+      if (smoky && Math.random() < dt * 7) {
+        game.smoke.push({
+          x:piece.x + (Math.random() - 0.5) * 22,
+          y:piece.y - piece.h * 0.35,
+          speed:18 + Math.random() * 16,
+          drift:(Math.random() - 0.5) * 9,
+          size:5 + Math.random() * 7,
+          life:0.9 + Math.random() * 0.7
+        });
+      }
+    });
+  }
+
+  function updateMaterials(dt, elapsed) {
+    var removed = [];
+    game.pieces.forEach(function (piece) {
+      if (piece.zone !== "grill" || !piece.item.material) return;
+      piece.materialLife += dt;
+
+      if (piece.item.material === "ice" && piece.materialLife >= 3) {
+        removed.push(piece.id);
+        messageEl.textContent = "🧊 冰塊融化了，短暫降溫結束";
+      }
+
+      if (piece.item.material === "tissue" && piece.materialLife >= 2.6) {
+        removed.push(piece.id);
+      }
+    });
+
+    if (removed.length) {
+      game.pieces = game.pieces.filter(function (piece) {
+        return removed.indexOf(piece.id) === -1;
+      });
+    }
+  }
+
+  function materialHeatModifier() {
+    var iceCount = game.pieces.filter(function (piece) {
+      return piece.zone === "grill" && piece.item.material === "ice";
+    }).length;
+    return Math.max(0.48, 1 - iceCount * 0.22);
   }
 
   function gameLoop(now) {
@@ -1681,20 +1895,33 @@
     game.remaining = Math.max(0, 180 - elapsed);
 
     if (!game.eventType && elapsed >= game.nextEventAt) triggerEvent(elapsed);
-    if (game.eventType && elapsed >= game.eventEndsAt) clearEvent("火力恢復正常，繼續盯熟度");
+    if (game.eventType && elapsed >= game.eventEndsAt) clearEvent("火力恢復正常");
 
-    var cfg = difficulty[difficultySelect.value] || difficulty.normal;
-    var rate = cfg.speed * heatMultiplier();
+    var cfg = getCfg();
+    var globalRate = cfg.speed * heatMultiplier() * materialHeatModifier();
 
     game.pieces.forEach(function (piece) {
-      piece.cook += dt * 1000 * rate;
       piece.pulse += dt * 5;
+      if (piece.zone !== "grill" || piece.item.material) return;
+
+      var localRate = globalRate * positionHeat(piece);
+      piece.cook += dt * 1000 * localRate;
+      piece.grillTime += dt * 1000;
+      if (currentHeatZone(piece) === piece.item.preferred) {
+        piece.zoneFitTime += dt * 1000;
+      }
+
+      var progress = piece.cook / (piece.item.target * 1000);
+      if (progress > 1.28) piece.burnt = true;
     });
+
+    updateMaterials(dt, elapsed);
+    updateSmoke(dt);
 
     game.spawnTimer += dt;
     if (game.spawnTimer >= cfg.spawn) {
       game.spawnTimer = 0;
-      spawnPiece(0);
+      spawnPiece(false);
     }
 
     updateHud();
@@ -1713,190 +1940,467 @@
     var secs = Math.floor(game.remaining % 60);
     gameTimeEl.textContent = String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
     scoreEl.textContent = String(Math.max(0, Math.round(game.score)));
-    comboEl.textContent = "x" + game.combo;
+    servedEl.textContent = String(game.served);
     heatEl.textContent = heatPercent() + "%";
   }
 
   function finishGame() {
     game.running = false;
+    game.pointer = null;
     difficultySelect.disabled = false;
     extinguishButton.disabled = true;
-    messageEl.textContent = "時間到！本局 " + Math.max(0, Math.round(game.score)) + " 分，最高連擊 " + game.combo + " 倍";
+    messageEl.textContent = "時間到！本局 " + Math.max(0, Math.round(game.score)) +
+      " 分｜成功出餐 " + game.served + " 份｜最高連續好評 " + game.bestStreak;
     drawScene();
   }
 
+  function drawZone(rect, fill, stroke, label, labelColor) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fillStyle = labelColor;
+    ctx.font = "bold 12px ui-monospace, monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(label, rect.x + 10, rect.y + 18);
+  }
+
   function drawPixelBackground() {
-    ctx.fillStyle = "#20130e";
+    ctx.fillStyle = "#1a120e";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "#351d13";
-    for (var y = 0; y < canvas.height; y += 28) {
-      for (var x = (y / 28) % 2 === 0 ? 0 : 14; x < canvas.width; x += 28) {
-        ctx.fillRect(x, y, 14, 14);
+    for (var y = 0; y < canvas.height; y += 24) {
+      for (var x = (y / 24) % 2 === 0 ? 0 : 12; x < canvas.width; x += 24) {
+        ctx.fillStyle = "#231710";
+        ctx.fillRect(x, y, 12, 12);
       }
     }
 
+    drawZone(trayRect, "#1e1915", "#59483b", "備料盤 · DRAG FROM HERE", "#c9b5a7");
+    drawZone(serveRect, "#142019", "#3e7650", "出餐區", "#9fe2ad");
+
     ctx.fillStyle = "#2b211a";
-    ctx.fillRect(70, 65, 580, 305);
+    ctx.fillRect(grillRect.x - 12, grillRect.y - 12, grillRect.w + 24, grillRect.h + 24);
+    ctx.fillStyle = "#0e0d0c";
+    ctx.fillRect(grillRect.x, grillRect.y, grillRect.w, grillRect.h);
 
-    ctx.fillStyle = "#101010";
-    ctx.fillRect(95, 90, 530, 255);
-
-    ctx.fillStyle = game.eventType === "flare" || game.eventType === "grease" ? "#ff5e2a" : "#b43c22";
-    for (var cx = 115; cx < 610; cx += 52) {
-      var ember = 8 + ((cx / 52) % 3) * 3;
-      ctx.fillRect(cx, 310, 34, ember);
-      ctx.fillStyle = "#6e2419";
-      ctx.fillRect(cx + 6, 320, 28, 12);
-      ctx.fillStyle = game.eventType === "flare" || game.eventType === "grease" ? "#ff5e2a" : "#b43c22";
-    }
+    ctx.fillStyle = "rgba(255,104,48,.12)";
+    ctx.fillRect(hotRect.x, hotRect.y, hotRect.w, hotRect.h);
+    ctx.strokeStyle = "rgba(255,122,56,.36)";
+    ctx.setLineDash([5,5]);
+    ctx.strokeRect(hotRect.x, hotRect.y, hotRect.w, hotRect.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#d67a45";
+    ctx.font = "bold 10px ui-monospace, monospace";
+    ctx.fillText("中央高火", hotRect.x + 7, hotRect.y + 14);
+    ctx.fillStyle = "#8f8075";
+    ctx.fillText("邊火慢烤", grillRect.x + 8, grillRect.y + 16);
 
     ctx.strokeStyle = "#706157";
-    ctx.lineWidth = 5;
-    for (var gx = 110; gx <= 610; gx += 38) {
+    ctx.lineWidth = 4;
+    for (var gx = grillRect.x + 14; gx < grillRect.x + grillRect.w - 8; gx += 34) {
       ctx.beginPath();
-      ctx.moveTo(gx, 105);
-      ctx.lineTo(gx, 320);
+      ctx.moveTo(gx, grillRect.y + 25);
+      ctx.lineTo(gx, grillRect.y + grillRect.h - 22);
       ctx.stroke();
     }
-    for (var gy = 115; gy <= 310; gy += 42) {
+    for (var gy = grillRect.y + 34; gy < grillRect.y + grillRect.h - 14; gy += 40) {
       ctx.beginPath();
-      ctx.moveTo(105, gy);
-      ctx.lineTo(615, gy);
+      ctx.moveTo(grillRect.x + 8, gy);
+      ctx.lineTo(grillRect.x + grillRect.w - 8, gy);
       ctx.stroke();
+    }
+
+    var fireColor = game.eventType === "flare" || game.eventType === "grease" ? "#ff7a28" : "#a83920";
+    ctx.fillStyle = fireColor;
+    for (var cx = grillRect.x + 18; cx < grillRect.x + grillRect.w - 20; cx += 48) {
+      ctx.fillRect(cx, grillRect.y + grillRect.h - 20, 30, 8 + ((cx / 48) % 3) * 3);
     }
 
     if (game.eventType === "flare") {
-      ctx.font = "34px serif";
-      ctx.fillText("🔥", 78, 112);
-      ctx.fillText("🔥", 590, 124);
-    }
-    if (game.eventType === "grease") {
-      ctx.font = "31px serif";
-      ctx.fillText("💥", 78, 120);
-    }
-    if (game.eventType === "wind") {
-      ctx.font = "34px serif";
-      ctx.fillText("💨", 80, 118);
+      ctx.font = "30px serif";
+      ctx.fillText("🔥", grillRect.x + 8, grillRect.y + 48);
+      ctx.fillText("🔥", grillRect.x + grillRect.w - 42, grillRect.y + 48);
+    } else if (game.eventType === "grease") {
+      ctx.font = "28px serif";
+      ctx.fillText("💥", grillRect.x + 10, grillRect.y + 48);
+    } else if (game.eventType === "wind") {
+      ctx.font = "30px serif";
+      ctx.fillText("💨", grillRect.x + 10, grillRect.y + 48);
     }
   }
 
+  function pieceProgress(piece) {
+    if (piece.item.material) return 0;
+    return piece.cook / (piece.item.target * 1000);
+  }
+
   function drawPiece(piece) {
-    var cell = grillCells[piece.cell];
-    var x = cell[0];
-    var y = cell[1];
     var item = piece.item;
-    var cfg = difficulty[difficultySelect.value] || difficulty.normal;
-    var targetMs = item.target * 1000;
-    var toleranceMs = item.tolerance * cfg.tolerance * 1000;
-    var error = targetMs - piece.cook;
-    var progress = Math.min(1.35, piece.cook / targetMs);
+    var progress = pieceProgress(piece);
+    var r = rectForPiece(piece);
+    var cfg = getCfg();
+    var toleranceRatio = item.material ? 0 : (item.tolerance * cfg.tolerance / item.target);
+    var closeToReady = !item.material && Math.abs(1 - progress) <= toleranceRatio;
+    var selected = game.pointer && game.pointer.id === piece.id;
 
     ctx.save();
-    ctx.translate(x, y);
 
-    if (Math.abs(error) < toleranceMs * 1.35) {
-      ctx.fillStyle = "rgba(255,209,102," + (0.25 + Math.sin(piece.pulse) * 0.08) + ")";
-      ctx.fillRect(-45, -45, 90, 90);
+    if (selected) {
+      ctx.fillStyle = "rgba(255,190,110,.13)";
+      ctx.fillRect(r.x - 5, r.y - 5, r.w + 10, r.h + 10);
+    } else if (closeToReady && piece.zone === "grill") {
+      ctx.fillStyle = "rgba(255,209,102," + (0.16 + Math.sin(piece.pulse) * 0.05) + ")";
+      ctx.fillRect(r.x - 5, r.y - 5, r.w + 10, r.h + 10);
     }
 
-    ctx.font = "52px serif";
+    if (piece.zone === "grill") {
+      ctx.strokeStyle = selected ? "#ffd384" : "rgba(255,255,255,.18)";
+      ctx.lineWidth = selected ? 3 : 1;
+      ctx.strokeRect(r.x, r.y, r.w, r.h);
+    }
+
+    var fontSize = Math.max(28, Math.min(54, Math.min(piece.w, piece.h) * 0.92));
+    ctx.font = fontSize + "px serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(item.emoji, 0, -5);
+    ctx.globalAlpha = piece.burnt ? 0.58 : 1;
+    ctx.fillText(item.emoji, piece.x, piece.y - 3);
+    ctx.globalAlpha = 1;
 
-    ctx.fillStyle = "#0f0d0b";
-    ctx.fillRect(-40, 32, 80, 9);
-    ctx.fillStyle = progress < 0.72 ? "#6fae63" : (progress < 1.13 ? "#ffd166" : "#ff5c5c");
-    ctx.fillRect(-38, 34, Math.min(76, 76 * Math.min(progress, 1)), 5);
+    if (piece.burnt) {
+      ctx.fillStyle = "rgba(20,10,4,.62)";
+      ctx.fillRect(r.x + 5, r.y + 6, Math.max(8, r.w - 10), Math.max(8, r.h - 12));
+      ctx.fillStyle = "#ff9a6b";
+      ctx.font = "bold 11px ui-monospace, monospace";
+      ctx.fillText("焦", piece.x, piece.y - 2);
+    }
 
-    if (progress > 1.23) {
-      ctx.fillStyle = "#ff6b6b";
-      ctx.font = "bold 13px monospace";
-      ctx.fillText("OVER!", 0, -43);
-    } else if (Math.abs(error) < toleranceMs) {
-      ctx.fillStyle = "#ffe08a";
-      ctx.font = "bold 12px monospace";
-      ctx.fillText("FLIP!", 0, -43);
+    ctx.fillStyle = item.hidden ? "#e9b9ff" : (item.material ? "#b9c7d6" : "#ddd0c7");
+    ctx.font = "bold 9px ui-monospace, monospace";
+    ctx.fillText(item.hidden ? "✨ " + item.name : item.name, piece.x, piece.y + piece.h / 2 + 10);
+
+    if (piece.zone === "grill" && !item.material) {
+      var barW = Math.min(70, piece.w + 16);
+      var bx = piece.x - barW / 2;
+      var by = piece.y + piece.h / 2 - 5;
+      ctx.fillStyle = "#0d0c0b";
+      ctx.fillRect(bx, by, barW, 6);
+      ctx.fillStyle = progress < 0.76 ? "#70a96b" : (progress <= 1.16 ? "#ffd166" : "#ee5d4c");
+      ctx.fillRect(bx + 1, by + 1, Math.max(0, Math.min(barW - 2, (barW - 2) * Math.min(progress, 1.2))), 4);
+
+      var turnText = item.turns ? "↻ " + piece.turns + "/" + item.turns : "單面";
+      ctx.fillStyle = "#efe4dc";
+      ctx.font = "bold 8px ui-monospace, monospace";
+      ctx.fillText(turnText, piece.x, r.y - 6);
     }
 
     ctx.restore();
   }
 
+  function drawSmoke() {
+    game.smoke.forEach(function (smoke) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(0.55, smoke.life * 0.45));
+      ctx.fillStyle = "#b8ada6";
+      ctx.beginPath();
+      ctx.arc(smoke.x, smoke.y, smoke.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawDragFeedback() {
+    if (!game.pointer) return;
+    var piece = game.pieces.find(function (p) { return p.id === game.pointer.id; });
+    if (!piece) return;
+
+    var r = rectForPiece(piece);
+    if (rectContains(grillRect, r, 4)) {
+      var blocked = collidesOnGrill(piece, piece.x, piece.y);
+      ctx.strokeStyle = blocked ? "#ff5c5c" : "#83d58d";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(r.x - 3, r.y - 3, r.w + 6, r.h + 6);
+      if (blocked) {
+        ctx.fillStyle = "#ff8b8b";
+        ctx.font = "bold 10px ui-monospace, monospace";
+        ctx.fillText("空間不足", piece.x, r.y - 10);
+      }
+    } else if (rectContains(serveRect, r, 3)) {
+      ctx.strokeStyle = "#8be9a1";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(r.x - 3, r.y - 3, r.w + 6, r.h + 6);
+    }
+  }
+
   function drawScene() {
     drawPixelBackground();
-    game.pieces.forEach(drawPiece);
+    game.pieces.filter(function (p) { return !(game.pointer && p.id === game.pointer.id); }).forEach(drawPiece);
+    if (game.pointer) {
+      var dragged = game.pieces.find(function (p) { return p.id === game.pointer.id; });
+      if (dragged) drawPiece(dragged);
+    }
+    drawSmoke();
+    drawDragFeedback();
 
     if (!game.running) {
-      ctx.fillStyle = "rgba(7,6,5,.62)";
+      ctx.fillStyle = "rgba(7,6,5,.64)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.textAlign = "center";
       ctx.fillStyle = "#fff4e8";
-      ctx.font = "bold 28px monospace";
-      ctx.fillText(game.remaining <= 0 ? "TIME UP" : "PIXEL BBQ", canvas.width / 2, 185);
+      ctx.font = "bold 30px ui-monospace, monospace";
+      ctx.fillText(game.remaining <= 0 ? "TIME UP" : "DRAG & GRILL", canvas.width / 2, 228);
       ctx.fillStyle = "#f0b276";
-      ctx.font = "bold 14px monospace";
-      ctx.fillText(game.remaining <= 0 ? "SCORE " + Math.round(game.score) : "CLICK START TO GRILL", canvas.width / 2, 220);
+      ctx.font = "bold 13px ui-monospace, monospace";
+      ctx.fillText(
+        game.remaining <= 0 ? "SCORE " + Math.round(game.score) : "START → DRAG → COOK → SERVE",
+        canvas.width / 2,
+        258
+      );
     }
   }
 
-  function scoreFlip(piece) {
-    var item = piece.item;
-    var cfg = difficulty[difficultySelect.value] || difficulty.normal;
-    var targetMs = item.target * 1000;
-    var toleranceMs = item.tolerance * cfg.tolerance * 1000;
-    var error = Math.abs(piece.cook - targetMs);
-    var resultScore = 0;
-    var resultText = "";
+  function performTurn(piece) {
+    if (!piece || piece.zone !== "grill" || piece.item.material) return;
+    var required = piece.item.turns || 0;
 
-    if (error <= toleranceMs * 0.38) {
-      game.combo = Math.min(8, game.combo + 1);
-      resultScore = item.base * 1.5 * game.combo;
-      resultText = "PERFECT +" + Math.round(resultScore);
-    } else if (error <= toleranceMs) {
-      game.combo = Math.min(8, game.combo + 1);
-      resultScore = item.base * game.combo;
-      resultText = "GOOD +" + Math.round(resultScore);
-    } else if (piece.cook < targetMs) {
-      game.combo = 1;
-      resultScore = 15;
-      resultText = "太早翻！ +15";
+    if (required === 0) {
+      piece.techniqueError += 0.18;
+      messageEl.textContent = piece.item.emoji + " " + piece.item.name + " 適合單面炙燒，不需要翻面";
+      return;
+    }
+
+    if (piece.turns >= required) {
+      piece.techniqueError += 0.22;
+      messageEl.textContent = piece.item.emoji + " 翻太多次，表面會失去最佳焦香";
+      return;
+    }
+
+    var progress = pieceProgress(piece);
+    var ideal = (piece.turns + 1) / (required + 1);
+    piece.techniqueError += Math.abs(progress - ideal);
+    piece.turns += 1;
+    messageEl.textContent = piece.item.emoji + " " + piece.item.name + "｜" + piece.item.method +
+      " " + piece.turns + "/" + required;
+  }
+
+  function removePiece(id) {
+    game.pieces = game.pieces.filter(function (piece) { return piece.id !== id; });
+  }
+
+  function servePiece(piece) {
+    if (piece.item.material) {
+      game.score = Math.max(0, game.score - 60);
+      game.streak = 0;
+      messageEl.textContent = "❌ " + piece.item.name + " 不是食材，出餐扣 60 分";
+      removePiece(piece.id);
+      setTimeout(function () { if (game.running) spawnPiece(true); }, 260);
+      return;
+    }
+
+    var cfg = getCfg();
+    var progress = pieceProgress(piece);
+    var toleranceRatio = piece.item.tolerance * cfg.tolerance / piece.item.target;
+    var error = Math.abs(1 - progress);
+    var techniqueReady = piece.turns >= (piece.item.turns || 0);
+    var techniqueQuality = Math.max(0, 1 - piece.techniqueError * 1.7);
+    var placementQuality = piece.grillTime > 0 ? piece.zoneFitTime / piece.grillTime : 0;
+    var score = 0;
+    var result = "";
+
+    if (piece.burnt || progress > 1.3) {
+      score = -Math.round(piece.item.base * 0.55);
+      result = "烤焦出餐 " + score;
+      game.streak = 0;
+    } else if (progress < 0.74) {
+      score = -30;
+      result = "還沒熟 -30";
+      game.streak = 0;
+    } else if (!techniqueReady) {
+      score = Math.round(piece.item.base * 0.25);
+      result = "烤法未完成 +" + score;
+      game.streak = 0;
+    } else if (error <= toleranceRatio * 0.42 && techniqueQuality > 0.72 && placementQuality > 0.62) {
+      game.streak += 1;
+      game.bestStreak = Math.max(game.bestStreak, game.streak);
+      score = Math.round(piece.item.base * (1.7 + Math.min(0.8, game.streak * 0.08)));
+      result = "PERFECT +" + score;
+    } else if (error <= toleranceRatio && techniqueQuality > 0.4) {
+      game.streak += 1;
+      game.bestStreak = Math.max(game.bestStreak, game.streak);
+      score = Math.round(piece.item.base * (1 + placementQuality * 0.3));
+      result = "GOOD +" + score;
     } else {
-      game.combo = 1;
-      resultScore = -35;
-      resultText = "焦掉了 -35";
+      score = Math.round(piece.item.base * 0.38);
+      result = "可出餐 +" + score;
+      game.streak = 0;
     }
 
-    game.score = Math.max(0, game.score + resultScore);
-    messageEl.textContent = item.emoji + " " + item.name + "｜" + resultText;
-    game.pieces = game.pieces.filter(function (p) { return p.id !== piece.id; });
-    setTimeout(function () {
-      if (game.running) spawnPiece(0);
-    }, 300);
+    if (piece.item.hidden && score > 0) {
+      score = Math.round(score * 1.35);
+      result += "｜隱藏加成";
+    }
+
+    game.score = Math.max(0, game.score + score);
+    game.served += 1;
+    messageEl.textContent = piece.item.emoji + " " + piece.item.name + "｜" + result;
+    removePiece(piece.id);
+    setTimeout(function () { if (game.running) spawnPiece(false); }, 260);
   }
 
-  canvas.addEventListener("click", function (event) {
-    if (!game.running) return;
+  function handleMaterialPlaced(piece) {
+    if (!piece.item.material || piece.zone !== "grill") return;
+    var elapsed = (performance.now() - game.startedAt) / 1000;
 
+    if (piece.item.material === "tissue") {
+      piece.burnt = true;
+      game.score = Math.max(0, game.score - 25);
+      triggerEvent(elapsed, "flare");
+      messageEl.textContent = "🧻 餐巾紙著火！-25 分，火勢暴增";
+    } else if (piece.item.material === "ice") {
+      piece.materialLife = 0;
+      messageEl.textContent = "🧊 冰塊上網，整體火力暫時下降";
+    } else if (piece.item.material === "charcoal") {
+      messageEl.textContent = "⬛ 加入木炭：火力提升，但會佔據烤網空間";
+    } else if (piece.item.material === "foil") {
+      messageEl.textContent = "⚪ 鋁箔球卡在烤網上，只會佔位置";
+    }
+  }
+
+  function canvasPoint(event) {
     var rect = canvas.getBoundingClientRect();
-    var x = (event.clientX - rect.left) * canvas.width / rect.width;
-    var y = (event.clientY - rect.top) * canvas.height / rect.height;
+    return {
+      x:(event.clientX - rect.left) * canvas.width / rect.width,
+      y:(event.clientY - rect.top) * canvas.height / rect.height
+    };
+  }
 
-    var hit = null;
-    var bestDistance = Infinity;
+  function findPieceAt(x, y) {
+    for (var i = game.pieces.length - 1; i >= 0; i -= 1) {
+      var piece = game.pieces[i];
+      var r = rectForPiece(piece);
+      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return piece;
+    }
+    return null;
+  }
 
-    game.pieces.forEach(function (piece) {
-      var cell = grillCells[piece.cell];
-      var dx = x - cell[0];
-      var dy = y - cell[1];
-      var distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < 58 && distance < bestDistance) {
-        hit = piece;
-        bestDistance = distance;
+  canvas.addEventListener("pointerdown", function (event) {
+    if (!game.running) return;
+    var p = canvasPoint(event);
+    var piece = findPieceAt(p.x, p.y);
+    if (!piece) return;
+
+    event.preventDefault();
+    if (canvas.setPointerCapture) {
+      try { canvas.setPointerCapture(event.pointerId); } catch (ignore) {}
+    }
+
+    game.pointer = {
+      pointerId:event.pointerId,
+      id:piece.id,
+      offsetX:p.x - piece.x,
+      offsetY:p.y - piece.y,
+      startX:p.x,
+      startY:p.y,
+      originX:piece.x,
+      originY:piece.y,
+      originZone:piece.zone,
+      moved:false
+    };
+  });
+
+  canvas.addEventListener("pointermove", function (event) {
+    if (!game.running || !game.pointer || game.pointer.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    var p = canvasPoint(event);
+    var piece = game.pieces.find(function (item) { return item.id === game.pointer.id; });
+    if (!piece) return;
+
+    piece.x = Math.max(piece.w / 2, Math.min(canvas.width - piece.w / 2, p.x - game.pointer.offsetX));
+    piece.y = Math.max(piece.h / 2, Math.min(canvas.height - piece.h / 2, p.y - game.pointer.offsetY));
+
+    if (Math.hypot(p.x - game.pointer.startX, p.y - game.pointer.startY) > 7) {
+      game.pointer.moved = true;
+    }
+    drawScene();
+  });
+
+  function finishPointer(event) {
+    if (!game.pointer || game.pointer.pointerId !== event.pointerId) return;
+    var pointer = game.pointer;
+    var piece = game.pieces.find(function (item) { return item.id === pointer.id; });
+    game.pointer = null;
+    if (!piece) return;
+
+    var pieceRect = rectForPiece(piece);
+    var inGrill = rectContains(grillRect, pieceRect, 4);
+    var inServe = rectContains(serveRect, pieceRect, 3);
+    var inTray = rectContains(trayRect, pieceRect, 2);
+
+    if (!pointer.moved && pointer.originZone === "grill") {
+      piece.x = pointer.originX;
+      piece.y = pointer.originY;
+      piece.zone = pointer.originZone;
+      performTurn(piece);
+      drawScene();
+      return;
+    }
+
+    if (inServe) {
+      servePiece(piece);
+      drawScene();
+      return;
+    }
+
+    if (inGrill) {
+      if (collidesOnGrill(piece, piece.x, piece.y)) {
+        piece.x = pointer.originX;
+        piece.y = pointer.originY;
+        piece.zone = pointer.originZone;
+        messageEl.textContent = "▦ 這個位置放不下，食材不能互相重疊";
+      } else {
+        piece.zone = "grill";
+        if (pointer.originZone !== "grill") handleMaterialPlaced(piece);
+        if (!piece.item.material) {
+          var zone = currentHeatZone(piece) === "center" ? "中央高火" : "邊火";
+          messageEl.textContent = piece.item.emoji + " " + piece.item.name + " 放上 " + zone + "｜建議：" + piece.item.method;
+        }
       }
-    });
+      drawScene();
+      return;
+    }
 
-    if (hit) scoreFlip(hit);
+    if (inTray) {
+      piece.zone = "tray";
+      if (!rectContains(trayRect, pieceRect, 4)) sendToTray(piece);
+      messageEl.textContent = "已把 " + piece.item.name + " 放回備料盤";
+      drawScene();
+      return;
+    }
+
+    piece.x = pointer.originX;
+    piece.y = pointer.originY;
+    piece.zone = pointer.originZone;
+    messageEl.textContent = "請拖到烤網、備料盤或右側出餐區";
+    drawScene();
+  }
+
+  canvas.addEventListener("pointerup", function (event) {
+    event.preventDefault();
+    finishPointer(event);
+  });
+
+  canvas.addEventListener("pointercancel", function (event) {
+    if (!game.pointer || game.pointer.pointerId !== event.pointerId) return;
+    var piece = game.pieces.find(function (item) { return item.id === game.pointer.id; });
+    if (piece) {
+      piece.x = game.pointer.originX;
+      piece.y = game.pointer.originY;
+      piece.zone = game.pointer.originZone;
+    }
+    game.pointer = null;
+    drawScene();
   });
 
   extinguishButton.addEventListener("click", function () {

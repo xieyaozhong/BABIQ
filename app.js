@@ -36,6 +36,16 @@
     brandBookingName: document.getElementById("brandBookingName"),
     brandBookingNote: document.getElementById("brandBookingNote"),
     brandBookingLink: document.getElementById("brandBookingLink"),
+    branchDetailCard: document.getElementById("branchDetailCard"),
+    branchDetailSource: document.getElementById("branchDetailSource"),
+    branchDetailName: document.getElementById("branchDetailName"),
+    branchDetailBrand: document.getElementById("branchDetailBrand"),
+    branchDetailAddress: document.getElementById("branchDetailAddress"),
+    branchDetailPhone: document.getElementById("branchDetailPhone"),
+    branchDetailHours: document.getElementById("branchDetailHours"),
+    branchMapLink: document.getElementById("branchMapLink"),
+    branchPhoneLink: document.getElementById("branchPhoneLink"),
+    branchOfficialLink: document.getElementById("branchOfficialLink"),
     bookingVenue: document.getElementById("bookingVenue"),
     bookingDate: document.getElementById("bookingDate"),
     partySize: document.getElementById("partySize"),
@@ -171,6 +181,86 @@
       note: "原燒官方門市頁提供各店線上訂位"
     }
   ];
+
+  var brandBranches = {
+    kanpai: [
+      {id:"main",name:"乾杯燒肉居酒屋 本店",address:"台北市大安區敦化南路一段236巷17號",phone:"02-8773-1150",hours:"11:30–15:00／17:00–22:30",source:"乾杯官方門市"},
+      {id:"zhongshan",name:"乾杯燒肉居酒屋 中山店",address:"台北市大同區南京西路25巷2-1號",phone:"02-2555-6110",hours:"平日 11:30–15:00／17:00–23:00；週末 11:30–23:00",source:"乾杯官方門市"},
+      {id:"xinyi-att",name:"乾杯燒肉居酒屋 信義 ATT 店",address:"台北市信義區松壽路12號6樓",phone:"02-8786-0808",hours:"11:00–15:00／17:00–23:00",source:"乾杯官方門市"},
+      {id:"nangang",name:"乾杯燒肉居酒屋 南港中信店",address:"台北市南港區經貿二路186-1號2樓",phone:"02-2786-6066",hours:"平日 11:00–15:00／17:00–21:30；週末 11:00–21:30",source:"乾杯官方門市"},
+      {id:"train-taipei",name:"乾杯列車 台北總站",address:"台北市中正區北平西路3號2樓",phone:"02-2361-8000",hours:"10:00–22:00",source:"乾杯官方門市"},
+      {id:"train-banqiao",name:"乾杯列車 板橋站",address:"新北市板橋區縣民大道二段7號2樓",phone:"02-8969-3333",hours:"11:00–23:00",source:"乾杯官方門市"},
+      {id:"linkou",name:"乾杯燒肉居酒屋 林口店",address:"新北市林口區文化三路一段356號2樓",phone:"02-2606-8522",hours:"週一至四 11:00–21:30；週五至日 11:00–22:00",source:"乾杯官方門市"},
+      {id:"xinzhuang",name:"乾杯燒肉居酒屋 新莊宏匯店",address:"新北市新莊區新北大道四段3號7樓",phone:"02-8521-6277",hours:"週日至四 11:00–21:00；週五六 11:00–22:00",source:"乾杯官方門市"},
+      {id:"taoyuan-dajiang",name:"乾杯燒肉居酒屋 桃園大江店",address:"桃園市中壢區中園路二段501號B1",phone:"03-468-0189",hours:"週日至四 11:00–22:00；週五六 11:00–22:30",source:"乾杯官方門市"},
+      {id:"taoyuan-gloria",name:"乾杯燒肉居酒屋 桃園華泰名品城店",address:"桃園市中壢區春德路189號3樓",phone:"03-287-6511",hours:"平日 11:00–21:00；週末 11:00–22:00",source:"乾杯官方門市"},
+      {id:"zhubei-feds",name:"乾杯燒肉居酒屋 竹北遠百店",address:"新竹縣竹北市莊敬北路18號7樓",phone:"03-550-1217",hours:"平日 11:00–15:00／17:00–22:00；週末 11:00–22:00",source:"乾杯官方門市"},
+      {id:"hsinchu-bigcity",name:"乾杯燒肉居酒屋 新竹巨城店",address:"新竹市中央路229號7樓",phone:"03-532-1509",hours:"營業時段依官方門市頁為準",source:"乾杯官方門市"},
+      {id:"tainan-mitsui",name:"乾杯燒肉居酒屋 台南三井店",address:"台南市歸仁區歸仁大道101號1樓",phone:"06-303-2885",hours:"平日 11:00–15:30／17:00–21:30；週末 11:00–21:30",source:"乾杯官方門市"},
+      {id:"tainan-ts-mall",name:"乾杯燒肉居酒屋 台南南紡店",address:"台南市東區中華東路一段358號5樓",phone:"06-209-2321",hours:"11:00–00:00",source:"乾杯官方門市"}
+    ],
+    powerofmeat: [
+      {id:"ximen",name:"肉次方 台北峨眉店",address:"台北市萬華區峨眉街37號4樓",phone:"02-2388-9010",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"nanjing",name:"肉次方 台北南京東店",address:"台北市中山區南京東路一段92號4樓",phone:"02-2562-8820",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"xindian",name:"肉次方 新店民權店",address:"新北市新店區民權路86號2樓",phone:"02-2218-2858",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"jiangzicui",name:"肉次方 板橋江子翠店",address:"新北市板橋區文化路二段182巷3弄79號3樓",phone:"02-2252-2505",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"zhongli",name:"肉次方 中壢元化店",address:"桃園市中壢區元化路245號2樓",phone:"03-433-1767",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"taoyuan",name:"肉次方 桃園中正店",address:"桃園市桃園區中正路1003號",phone:"03-356-7886",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"taichung-wuquan",name:"肉次方 台中文心五權西店",address:"台中市南屯區五權西路二段273號2樓",phone:"04-2472-2551",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"taichung-chongde",name:"肉次方 台中文心崇德店",address:"台中市北屯區文心路四段585號",phone:"04-2242-2899",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"chiayi",name:"肉次方 嘉義中山店",address:"嘉義市西區中山路370號2樓",phone:"05-222-8818",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"tainan",name:"肉次方 台南府前店",address:"台南市安平區府前路二段500號2樓之1",phone:"06-299-2997",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"kaohsiung-yucheng",name:"肉次方 高雄裕誠店",address:"高雄市左營區裕誠路448號3樓",phone:"07-556-6911",hours:"依官方訂位系統為準",source:"肉次方官方門市"},
+      {id:"kaohsiung-dreammall",name:"肉次方 高雄夢時代店",address:"高雄市前鎮區中華五路789號9樓",phone:"07-811-8998",hours:"週日至四 11:00–22:00；週五六 11:00–22:30",source:"肉次方官方門市"}
+    ],
+    tianji: [
+      {id:"zhongli",name:"田季發爺 桃園中壢店",address:"桃園市中壢區中美路二段136–138號",phone:"03-422-5066",hours:"依官方門市頁為準",source:"田季發爺官方門市"},
+      {id:"tainan",name:"田季發爺 台南中華店",address:"台南市東區中華東路二段101號",phone:"06-267-3070",hours:"依官方門市頁為準",source:"田季發爺官方門市"},
+      {id:"kaohsiung",name:"田季發爺 高雄中山店",address:"高雄市新興區中山一路6-20號",phone:"07-282-0228",hours:"依官方門市頁為準",source:"田季發爺官方門市"}
+    ],
+    "yakiniku-zhong": [
+      {id:"taipei-jilin",name:"燒肉眾 台北吉林店",address:"台北市中山區吉林路181號1樓",phone:"02-2536-8787",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taipei-daan",name:"燒肉眾 台北大安店",address:"台北市大安區大安路一段51巷7號",phone:"02-2776-6650",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taipei-ximen",name:"燒肉眾 台北西門店",address:"台北市萬華區成都路66號2–3樓",phone:"02-2375-5286",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"sanchong",name:"燒肉眾 三重自強店",address:"新北市三重區自強路一段175號",phone:"02-8985-7538",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"xindian",name:"燒肉眾 新店安康店",address:"新北市新店區安康路二段22號",phone:"02-8666-8003",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"xinzhuang",name:"燒肉眾 新莊中正店",address:"新北市新莊區中正路280號",phone:"02-8991-1210",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"shulin",name:"燒肉眾 樹林秀泰店",address:"新北市樹林區樹新路127號",phone:"02-8687-1588",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"tamsui",name:"燒肉眾 淡水老街店",address:"新北市淡水區中正路334號2樓",phone:"02-2629-6606",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"zhubei",name:"燒肉眾 竹北光明店",address:"新竹縣竹北市光明一路480號",phone:"03-553-0868",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taichung-sanmin",name:"燒肉眾 台中三民西店",address:"台中市南區三民西路321號",phone:"04-2378-5586",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taichung-wenxin",name:"燒肉眾 台中文心店",address:"台中市南屯區文心路一段546號",phone:"04-2329-0288",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taichung-zhongqing",name:"燒肉眾 台中中清店",address:"台中市大雅區中清路三段1218號",phone:"04-2566-8857",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taichung-shalu",name:"燒肉眾 台中沙鹿店",address:"台中市沙鹿區北勢東路820-1號",phone:"04-2652-2999",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taichung-jmall",name:"燒肉眾 台中 JMall 店",address:"台中市西屯區台灣大道四段1038號",phone:"04-2465-2858",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taichung-fengyuan",name:"燒肉眾 台中豐原店",address:"台中市豐原區源豐路60號",phone:"04-2525-3878",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"chiayi",name:"燒肉眾 嘉義民生店",address:"嘉義市西區民生北路139號",phone:"05-222-3110",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"},
+      {id:"taitung",name:"燒肉眾 台東新生店",address:"台東縣台東市新生路191之2號",phone:"08-935-8999",hours:"以官方訂位頁為準",source:"門市彙整／官方訂位為準"}
+    ],
+    umai: [
+      {id:"wenxin",name:"屋馬燒肉 文心店",address:"台中市南屯區文心路一段436號",phone:"04-2310-6699",hours:"依屋馬官方訂位系統為準",source:"屋馬官方門市名單／公開資料"},
+      {id:"zhonggang",name:"屋馬燒肉 中港店",address:"台中市西屯區台灣大道三段300號",phone:"04-2312-1000",hours:"依屋馬官方訂位系統為準",source:"屋馬官方門市名單／公開資料"},
+      {id:"guoan",name:"屋馬燒肉 國安店",address:"台中市西屯區國安一路168號B1-2",phone:"04-2465-2222",hours:"依屋馬官方訂位系統為準",source:"屋馬官方門市名單／公開資料"},
+      {id:"chongde",name:"屋馬燒肉 崇德店",address:"台中市北屯區崇德路二段369號",phone:"04-2241-0000",hours:"依屋馬官方訂位系統為準",source:"屋馬官方門市名單／公開資料"},
+      {id:"chungyo",name:"屋馬燒肉 中友店",address:"台中市北區育才北路69號1樓",phone:"04-2226-0888",hours:"依屋馬官方訂位系統為準",source:"屋馬官方門市名單／公開資料"},
+      {id:"wenxin-showtime",name:"屋馬燒肉 文心秀泰店",address:"台中市南屯區文心南路289號5樓",phone:"04-2475-0777",hours:"依屋馬官方訂位系統為準",source:"屋馬官方門市名單／公開資料"}
+    ],
+    yakiyan: [
+      {id:"xizhi",name:"原燒 汐止遠雄店",address:"新北市汐止區新台五路一段99號2樓",phone:"02-2697-3018",hours:"依原燒官方門市頁為準",source:"原燒官方門市"},
+      {id:"ximen",name:"原燒 台北西門店",address:"台北市萬華區中華路一段90號2樓",phone:"02-2388-8523",hours:"依原燒官方門市頁為準",source:"原燒官方門市"},
+      {id:"banqiao",name:"原燒 板橋文化店",address:"新北市板橋區文化路一段280號2樓",phone:"02-2259-2250",hours:"依原燒官方門市頁為準",source:"原燒官方門市"},
+      {id:"sanchong",name:"原燒 三重龍門店",address:"新北市三重區龍門路6-1號4樓",phone:"02-8983-9355",hours:"依原燒官方門市頁為準",source:"原燒官方門市"},
+      {id:"taoyuan-tonlin",name:"原燒 桃園統領店",address:"桃園市桃園區中正路61號8樓",phone:"03-335-7957",hours:"週日至四 11:00–21:30；週五六 11:00–22:00",source:"原燒官方門市"},
+      {id:"taoyuan-taimall",name:"原燒 桃園台茂店",address:"桃園市蘆竹區南崁路一段112號6樓",phone:"03-222-1668",hours:"11:00–22:00",source:"原燒官方門市"},
+      {id:"zhubei",name:"原燒 竹北光明店",address:"新竹縣竹北市光明一路112號",phone:"03-558-6030",hours:"週一至四及週日 11:00–00:00；週五六 11:00–01:00",source:"原燒官方門市"},
+      {id:"toufen",name:"原燒 頭份尚順育樂世界店",address:"苗栗縣頭份市育樂街6號1樓",phone:"037-592866",hours:"週一至四及週日 11:00–00:00；週五六 11:00–01:00",source:"原燒官方門市"},
+      {id:"taichung-xitun",name:"原燒 台中西屯萬家福店",address:"台中市西屯區台灣大道四段1086號1樓",phone:"04-2460-8523",hours:"11:00–22:00",source:"原燒官方門市"},
+      {id:"taichung-gongyi",name:"原燒 台中公益店",address:"台中市南屯區公益路二段702號",phone:"04-2255-6885",hours:"週一至四及週日 11:00–00:00；週五六 11:00–01:00",source:"原燒官方門市"},
+      {id:"chiayi",name:"原燒 嘉義耐斯店",address:"嘉義市東區忠孝路600號6樓",phone:"05-276-9158",hours:"依原燒官方門市頁為準",source:"原燒官方門市"},
+      {id:"yilan",name:"原燒 宜蘭新月店",address:"宜蘭市民權路二段38巷6號4樓",phone:"03-932-9258",hours:"依原燒官方門市頁為準",source:"原燒官方門市"},
+      {id:"kaohsiung",name:"原燒 鳳山青年店",address:"高雄市鳳山區青年路二段307號",phone:"07-767-9258",hours:"週一至四及週日 11:00–00:00；週五六 11:00–01:00",source:"原燒官方門市"}
+    ]
+  };
 
   var searchAliases = {
     "台北": ["臺北","台北"],
@@ -948,7 +1038,10 @@
     var place = state.places.find(function (p) { return p.id === id; });
     if (!place) return;
     state.selectedId = id;
+    if (dom.brandBookingSelect) dom.brandBookingSelect.value = "all";
+    populateBookingVenues();
     dom.bookingVenue.value = id;
+    showBranchDetails(id);
     renderList();
   }
 
@@ -965,9 +1058,7 @@
   }
 
   function bookingBrandCount(brand) {
-    return state.places.filter(function (place) {
-      return brandMatchesPlace(brand, place);
-    }).length;
+    return (brandBranches[brand.id] || []).length;
   }
 
   function renderBookingBrands() {
@@ -1009,30 +1100,90 @@
     dom.brandBookingLink.href = brand.officialUrl;
   }
 
-  function populateBookingVenues() {
-    if (!dom.bookingVenue) return;
-    var brandId = dom.brandBookingSelect ? dom.brandBookingSelect.value : "all";
-    var brand = getBookingBrand(brandId);
-    var places = state.places.slice(0, 450);
+  function branchValue(brandId, branchId) {
+    return "branch:" + brandId + ":" + branchId;
+  }
 
-    if (brand) {
-      places = places.filter(function (place) {
-        return brandMatchesPlace(brand, place);
-      });
+  function getBranchFromValue(value) {
+    var match = String(value || "").match(/^branch:([^:]+):(.+)$/);
+    if (!match) return null;
+    var brand = getBookingBrand(match[1]);
+    var branches = brandBranches[match[1]] || [];
+    var branch = branches.find(function (item) { return item.id === match[2]; });
+    if (!brand || !branch) return null;
+    return { brand: brand, branch: branch };
+  }
+
+  function branchGoogleMapsUrl(branch) {
+    return "https://www.google.com/maps/search/?api=1&query=" +
+      encodeURIComponent(branch.name + " " + branch.address);
+  }
+
+  function showBranchDetails(value) {
+    if (!dom.branchDetailCard) return;
+    var selected = getBranchFromValue(value);
+    if (!selected) {
+      dom.branchDetailCard.hidden = true;
+      return;
     }
 
-    var options = ['<option value="">選擇店家 / 分店</option>'];
-    if (!places.length && brand) {
-      options.push('<option value="" disabled>目前公開資料未載入此品牌分店</option>');
+    var brand = selected.brand;
+    var branch = selected.branch;
+    dom.branchDetailCard.hidden = false;
+    dom.branchDetailSource.textContent = branch.source || "BRANCH INFO";
+    dom.branchDetailName.textContent = branch.name;
+    dom.branchDetailBrand.textContent = brand.name;
+    dom.branchDetailAddress.textContent = branch.address || "地址待確認";
+    dom.branchDetailPhone.textContent = branch.phone || "電話待確認";
+    dom.branchDetailHours.textContent = branch.hours || "營業時間以官方訂位頁為準";
+    dom.branchMapLink.href = branchGoogleMapsUrl(branch);
+    dom.branchPhoneLink.href = branch.phone ? "tel:" + branch.phone.replace(/[^0-9+]/g, "") : "#";
+    dom.branchPhoneLink.hidden = !branch.phone;
+    dom.branchOfficialLink.href = branch.bookingUrl || brand.officialUrl;
+  }
+
+  function populateBookingVenues() {
+    if (!dom.bookingVenue) return;
+    var current = dom.bookingVenue.value;
+    var brandId = dom.brandBookingSelect ? dom.brandBookingSelect.value : "all";
+    var brand = getBookingBrand(brandId);
+    var options = ['<option value="">選擇分店 / 店家</option>'];
+
+    if (brand) {
+      var branches = brandBranches[brand.id] || [];
+      branches.forEach(function (branch) {
+        options.push('<option value="' + safe(branchValue(brand.id, branch.id)) + '">' +
+          safe(branch.name) + "｜" + safe(branch.address) + "</option>");
+      });
+
+      var extraPlaces = state.places.filter(function (place) {
+        return brandMatchesPlace(brand, place) &&
+          !branches.some(function (branch) {
+            return normalizeAdminText(branch.name).indexOf(normalizeAdminText(place.name)) !== -1 ||
+              normalizeAdminText(place.name).indexOf(normalizeAdminText(branch.name)) !== -1;
+          });
+      });
+
+      if (extraPlaces.length) {
+        options.push('<optgroup label="其他公開資料分店">');
+        extraPlaces.forEach(function (place) {
+          options.push('<option value="' + safe(place.id) + '">' + safe(place.name) + "</option>");
+        });
+        options.push("</optgroup>");
+      }
     } else {
-      places.forEach(function (place) {
+      state.places.slice(0, 450).forEach(function (place) {
         options.push('<option value="' + safe(place.id) + '">' + safe(place.name) + "</option>");
       });
     }
 
     dom.bookingVenue.innerHTML = options.join("");
+    if (Array.from(dom.bookingVenue.options).some(function (option) { return option.value === current; })) {
+      dom.bookingVenue.value = current;
+    }
     updateBrandBookingInfo(brandId);
     renderBookingBrands();
+    showBranchDetails(dom.bookingVenue.value);
   }
 
   function selectBookingBrand(brandId) {
@@ -1080,7 +1231,12 @@
     var id = dom.bookingVenue.value;
     var date = dom.bookingDate.value;
     var party = Number(dom.partySize.value || 2);
-    var place = state.places.find(function (p) { return p.id === id; });
+    var builtIn = getBranchFromValue(id);
+    var place = builtIn ? {
+      id: id,
+      name: builtIn.branch.name,
+      address: builtIn.branch.address
+    } : state.places.find(function (p) { return p.id === id; });
 
     if (!place || !date) {
       var selectedBrand = dom.brandBookingSelect ? getBookingBrand(dom.brandBookingSelect.value) : null;
@@ -1156,6 +1312,16 @@
   if (dom.brandBookingSelect) {
     dom.brandBookingSelect.addEventListener("change", function () {
       selectBookingBrand(dom.brandBookingSelect.value);
+    });
+  }
+
+  if (dom.bookingVenue) {
+    dom.bookingVenue.addEventListener("change", function () {
+      showBranchDetails(dom.bookingVenue.value);
+      var builtIn = getBranchFromValue(dom.bookingVenue.value);
+      if (builtIn) {
+        dom.slotTitle.textContent = builtIn.branch.name + " · 選擇日期與人數";
+      }
     });
   }
 

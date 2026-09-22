@@ -212,8 +212,23 @@
         <p>店家卡片會優先提供公開的訂位／官網連結；下方時段仍是示範查詢層，不冒充真實庫存</p>
       </div>
 
+      <div class="brand-booking-bar">
+        <div>
+          <small>POPULAR BBQ BRANDS</small>
+          <strong>熱門連鎖品牌快速訂位</strong>
+          <span>先選品牌，再選目前載入的分店；也可直接前往官方訂位</span>
+        </div>
+        <div id="brandPresetList" class="brand-preset-list" aria-label="熱門燒肉品牌"></div>
+      </div>
+
       <div class="availability-grid">
         <form id="availabilityForm" class="booking-card">
+          <label>
+            <span>熱門品牌</span>
+            <select id="brandBookingSelect">
+              <option value="all">全部品牌 / 自由選店</option>
+            </select>
+          </label>
           <label>
             <span>店家</span>
             <select id="bookingVenue" required>
@@ -249,8 +264,16 @@
             </div>
             <span class="demo-badge">DEMO</span>
           </div>
+          <div id="brandBookingInfo" class="brand-booking-info" hidden>
+            <div>
+              <small>OFFICIAL BOOKING</small>
+              <strong id="brandBookingName">品牌官方訂位</strong>
+              <span id="brandBookingNote">可直接查看品牌官方門市與訂位資訊</span>
+            </div>
+            <a id="brandBookingLink" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">前往官方訂位</a>
+          </div>
           <div id="slotResults" class="slots" aria-live="polite">
-            <div class="slot-placeholder">查詢後會顯示 17:00–22:00 的可用時段</div>
+            <div class="slot-placeholder">查詢後會顯示 17:00–22:00 的示範時段</div>
           </div>
         </div>
       </div>

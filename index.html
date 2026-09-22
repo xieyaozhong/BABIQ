@@ -31,7 +31,7 @@
         <h1>今晚想烤哪一間？<br><span>直接找到附近店家</span></h1>
         <p class="hero-lead">像訂房平台一樣先看「你附近」：BABIQ 會在你允許定位後，自動整理周邊燒肉、烤肉、BBQ 與炭火餐廳，顯示距離、特色、營業資訊與訂位入口。</p>
         <div class="hero-actions">
-          <button id="locateMeHero" class="btn btn-primary" type="button">📍 找我附近的烤肉</button>
+          <button id="locateMeHero" class="btn btn-primary location-cta" type="button"><span class="location-cta-icon">⌖</span><span><strong>開啟定位・看附近店家</strong><small>依距離排序，不儲存你的位置</small></span><span class="location-cta-arrow">→</span></button>
           <a class="btn btn-ghost" href="#discovery-section">瀏覽全台店家</a>
           <a class="btn btn-ghost" href="#game">先玩一局</a>
         </div>
@@ -60,7 +60,7 @@
         <span class="quick-icon" aria-hidden="true">📍</span>
         <div>
           <small>位置</small>
-          <strong id="locationSummary">正在準備定位…</strong>
+          <strong id="locationSummary">開啟定位，可優先顯示離你最近的店家</strong>
         </div>
       </div>
       <label class="quick-search-field">
@@ -175,7 +175,7 @@
               <option value="name">店名</option>
             </select>
           </label>
-          <button id="locateMe" class="btn btn-small btn-primary" type="button">📍 使用我的位置</button>
+          <button id="locateMe" class="btn btn-small btn-primary locate-inline" type="button">⌖ 開啟定位找附近</button>
           <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取資料</button>
           <button id="resetAreaFilters" class="btn btn-small btn-ghost" type="button">清除行政區</button>
           <p id="mapStatus" class="helper discovery-status" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
@@ -323,5 +323,51 @@
     <span>台灣烤肉探索 × Pixel BBQ Game</span>
   </footer>
 <script src="./app.js"></script>
+
+  <div id="locationGuide" class="location-guide" hidden aria-hidden="true">
+    <div class="location-guide-backdrop" data-location-close></div>
+    <section class="location-guide-sheet" role="dialog" aria-modal="true" aria-labelledby="locationGuideTitle">
+      <button class="location-guide-close" type="button" data-location-close aria-label="關閉">×</button>
+
+      <div id="locationGuideIntro" class="location-guide-state">
+        <div class="location-guide-mark" aria-hidden="true">⌖</div>
+        <p class="eyebrow">NEARBY BBQ</p>
+        <h2 id="locationGuideTitle">開啟定位，直接看你附近的烤肉店</h2>
+        <p class="location-guide-copy">BABIQ 只會用目前位置計算店家距離與排序，不會儲存你的精確位置</p>
+        <div class="location-benefits">
+          <div><span>01</span><strong>最近的店排前面</strong><small>不用先輸入縣市或地址</small></div>
+          <div><span>02</span><strong>直接顯示距離</strong><small>快速判斷哪間最方便</small></div>
+          <div><span>03</span><strong>附近 12 公里探索</strong><small>自動補抓周邊烤肉店</small></div>
+        </div>
+        <button id="locationPermissionButton" class="btn btn-primary location-permission-button" type="button">允許定位並搜尋附近</button>
+        <button class="location-later" type="button" data-location-close>先瀏覽全台店家</button>
+      </div>
+
+      <div id="locationGuideDenied" class="location-guide-state" hidden>
+        <div class="location-guide-mark location-guide-mark-warn" aria-hidden="true">!</div>
+        <p class="eyebrow">LOCATION OFF</p>
+        <h2>定位目前被關閉</h2>
+        <p class="location-guide-copy">瀏覽器已阻擋位置權限，需要先在網站權限中改成「允許」</p>
+        <ol id="locationPermissionSteps" class="location-steps"></ol>
+        <button id="retryLocationButton" class="btn btn-primary location-permission-button" type="button">我已開啟，重新偵測</button>
+        <button class="location-later" type="button" data-location-close>先不用定位</button>
+      </div>
+
+      <div id="locationGuideLoading" class="location-guide-state" hidden>
+        <div class="location-loader" aria-hidden="true"></div>
+        <h2>正在取得你的位置</h2>
+        <p class="location-guide-copy">取得後會自動把附近店家排到最前面</p>
+      </div>
+
+      <div id="locationGuideSuccess" class="location-guide-state" hidden>
+        <div class="location-guide-mark location-guide-mark-success" aria-hidden="true">✓</div>
+        <p class="eyebrow">LOCATION READY</p>
+        <h2>定位已開啟</h2>
+        <p class="location-guide-copy">正在整理附近烤肉店，結果會依距離優先顯示</p>
+        <button id="viewNearbyButton" class="btn btn-primary location-permission-button" type="button">查看附近店家</button>
+      </div>
+    </section>
+  </div>
+
 </body>
 </html>

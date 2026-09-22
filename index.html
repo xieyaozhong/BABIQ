@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17120f">
+  <meta name="description" content="BABIQ 全台烤肉地圖：找燒肉、查特色與價位，搭配 3 分鐘像素烤肉挑戰。">
+  <title>BABIQ｜全台烤肉地圖</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3ynT2xchxFJ0VZ5SAx0rPmxHg1A7M=" crossorigin="">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="BABIQ 首頁">
+      <span class="brand-mark" aria-hidden="true">🔥</span>
+      <span>
+        <strong>BABIQ</strong>
+        <small>TAIWAN BBQ MAP</small>
+      </span>
+    </a>
+    <nav class="nav">
+      <a href="#map-section">烤肉地圖</a>
+      <a href="#availability">空位查詢</a>
+      <a href="#game">3 分鐘挑戰</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">全台烤肉情報 × 即時探索 × 像素遊戲</p>
+        <h1>今晚想烤哪一間？<br><span>從地圖直接找</span></h1>
+        <p class="hero-lead">用地圖整理台灣燒肉、烤肉、BBQ 與炭火餐廳，快速看地點、特色、營業資訊與價位欄位，再用空位查詢挑時間。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#map-section">開始找烤肉</a>
+          <a class="btn btn-ghost" href="#game">先玩一局</a>
+        </div>
+        <div class="data-note">
+          <span class="status-dot"></span>
+          店家位置主要讀取 OpenStreetMap / Overpass 公開資料；價位與空位會標示資料來源與是否為示範值
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="pixel-grill">
+          <div class="grill-top">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="food food-a">🥩</div>
+          <div class="food food-b">🍄</div>
+          <div class="food food-c">🦐</div>
+          <div class="coals"><b></b><b></b><b></b><b></b><b></b></div>
+        </div>
+        <div class="hero-chip chip-1">準時翻面 +120</div>
+        <div class="hero-chip chip-2">炭火失控！</div>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="功能摘要">
+      <article><strong id="venueCount">—</strong><span>目前載入店家</span></article>
+      <article><strong>3:00</strong><span>每局烤肉挑戰</span></article>
+      <article><strong>5</strong><span>食材難度階級</span></article>
+      <article><strong>全台</strong><span>地圖探索範圍</span></article>
+    </section>
+
+    <section id="map-section" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">BBQ MAP</p>
+          <h2>全台烤肉地圖</h2>
+        </div>
+        <p>從公開地圖資料抓取店家；可依關鍵字、區域與價位欄位篩選</p>
+      </div>
+
+      <div class="map-shell">
+        <aside class="filters" aria-label="地圖篩選">
+          <label>
+            <span>搜尋</span>
+            <input id="searchInput" type="search" placeholder="店名、特色、地址">
+          </label>
+          <label>
+            <span>區域</span>
+            <select id="regionFilter">
+              <option value="all">全台</option>
+              <option value="north">北部</option>
+              <option value="central">中部</option>
+              <option value="south">南部</option>
+              <option value="east">東部</option>
+            </select>
+          </label>
+          <label>
+            <span>價位</span>
+            <select id="priceFilter">
+              <option value="all">不限</option>
+              <option value="$">$ 平價</option>
+              <option value="$$">$$ 中價</option>
+              <option value="$$$">$$$ 高價</option>
+              <option value="unknown">待店家確認</option>
+            </select>
+          </label>
+          <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取地圖資料</button>
+          <p id="mapStatus" class="helper" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
+        </aside>
+
+        <div class="map-stage">
+          <div id="map" aria-label="台灣烤肉店地圖"></div>
+          <div class="map-legend">
+            <span><i class="legend-dot"></i> 燒肉 / BBQ / 烤肉</span>
+            <span>資料不足的店家會標示「待確認」</span>
+          </div>
+        </div>
+
+        <div class="venue-panel">
+          <div class="venue-panel-head">
+            <strong>店家清單</strong>
+            <span id="resultCount">0 間</span>
+          </div>
+          <div id="venueList" class="venue-list">
+            <div class="empty-card">正在載入店家資料…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="availability" class="section alt-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">SEAT CHECK</p>
+          <h2>空位查詢</h2>
+        </div>
+        <p>目前先提供可操作的示範查詢層，之後可直接替換成訂位平台或店家 API</p>
+      </div>
+
+      <div class="availability-grid">
+        <form id="availabilityForm" class="booking-card">
+          <label>
+            <span>店家</span>
+            <select id="bookingVenue" required>
+              <option value="">先從地圖選擇店家</option>
+            </select>
+          </label>
+          <div class="form-row">
+            <label>
+              <span>日期</span>
+              <input id="bookingDate" type="date" required>
+            </label>
+            <label>
+              <span>人數</span>
+              <select id="partySize">
+                <option value="2">2 人</option>
+                <option value="3">3 人</option>
+                <option value="4" selected>4 人</option>
+                <option value="5">5 人</option>
+                <option value="6">6 人</option>
+                <option value="8">8 人</option>
+              </select>
+            </label>
+          </div>
+          <button class="btn btn-primary" type="submit">查詢空位</button>
+          <p class="helper">示範模式不代表店家真實庫存，正式版可串接 inline / EZTABLE / 店家訂位後台</p>
+        </form>
+
+        <div class="slot-card">
+          <div class="slot-card-head">
+            <div>
+              <small>AVAILABLE TIMES</small>
+              <h3 id="slotTitle">選一間店開始查詢</h3>
+            </div>
+            <span class="demo-badge">DEMO</span>
+          </div>
+          <div id="slotResults" class="slots" aria-live="polite">
+            <div class="slot-placeholder">查詢後會顯示 17:00–22:00 的可用時段</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="game" class="section game-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">PIXEL BBQ CHALLENGE</p>
+          <h2>3 分鐘像素烤肉挑戰</h2>
+        </div>
+        <p>看準熟度翻面；食材越難、時間窗越短，分數越高。小心炭火失控與突發事件</p>
+      </div>
+
+      <div class="game-layout">
+        <div class="game-console">
+          <div class="game-hud">
+            <div><span>TIME</span><strong id="gameTime">03:00</strong></div>
+            <div><span>SCORE</span><strong id="gameScore">0</strong></div>
+            <div><span>COMBO</span><strong id="gameCombo">x1</strong></div>
+            <div><span>HEAT</span><strong id="heatLevel">100%</strong></div>
+          </div>
+
+          <canvas id="bbqGame" width="720" height="420" aria-label="像素風格烤肉遊戲畫面"></canvas>
+
+          <div class="game-controls">
+            <button id="startGame" class="btn btn-primary" type="button">開始 3 分鐘挑戰</button>
+            <button id="extinguish" class="btn btn-dark" type="button" disabled>灑水降火</button>
+            <label class="difficulty-control">
+              <span>難度</span>
+              <select id="difficultySelect">
+                <option value="easy">新手</option>
+                <option value="normal" selected>標準</option>
+                <option value="hard">職人</option>
+              </select>
+            </label>
+          </div>
+          <p id="gameMessage" class="game-message" aria-live="polite">按下開始後，點擊烤網上的食材翻面</p>
+        </div>
+
+        <aside class="ingredient-card">
+          <div class="ingredient-card-head">
+            <small>INGREDIENT GUIDE</small>
+            <h3>食材熟度表</h3>
+          </div>
+          <div id="ingredientGuide" class="ingredient-guide"></div>
+          <div class="event-list">
+            <strong>特殊事件</strong>
+            <p>🔥 炭火失控：短時間加速熟成</p>
+            <p>💨 風勢突變：火力下降</p>
+            <p>💥 油脂滴落：瞬間升溫並縮短翻面時間窗</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="roadmap">
+      <p class="eyebrow">NEXT</p>
+      <h2>之後可以直接擴充成真正的烤肉平台</h2>
+      <div class="roadmap-grid">
+        <article><strong>01</strong><h3>真實訂位串接</h3><p>將示範空位層替換成合作店家 API、inline、EZTABLE 或自建庫存</p></article>
+        <article><strong>02</strong><h3>店家後台</h3><p>店家可自行更新價位、套餐、特色、照片與空桌</p></article>
+        <article><strong>03</strong><h3>玩家排行</h3><p>登入後儲存最高分、城市排行與限時食材活動</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <strong>BABIQ</strong>
+    <span>台灣烤肉地圖 × Pixel BBQ Game</span>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="./app.js"></script>
+</body>
+</html>

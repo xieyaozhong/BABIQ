@@ -6,7 +6,8 @@
     filtered: [],
     selectedId: null,
     userLocation: null,
-    nearbyLoaded: false
+    nearbyLoaded: false,
+    adminRequestId: 0
   };
 
   var dom = {
@@ -379,6 +380,16 @@
     return "";
   }
 
+  function inferCityFromAddress(address, current) {
+    if (current) return current;
+    var normalized = normalizeAdminText(address);
+    var cities = Object.keys(adminDivisions);
+    for (var i = 0; i < cities.length; i += 1) {
+      if (normalized.indexOf(normalizeAdminText(cities[i])) !== -1) return cities[i];
+    }
+    return "";
+  }
+
   function districtFromTags(tags, city) {
     var candidates = [
       tags["addr:district"], tags["is_in:district"], tags["addr:borough"], tags["addr:subdistrict"]
@@ -505,7 +516,7 @@
     return features.slice(0, 7);
   }
 
-  function transformElement(el) {
+  function transformElement(el, forcedCity, forcedDistrict) {
     var tags = el.tags || {};
     var lat = el.lat || (el.center && el.center.lat);
     var lon = el.lon || (el.center && el.center.lon);
@@ -513,8 +524,8 @@
 
     var price = getPrice(tags, tags.name);
     var address = formatAddress(tags);
-    var city = cityFromTags(tags);
-    var district = inferDistrictFromAddress(city, address, districtFromTags(tags, city));
+    var city = forcedCity || inferCityFromAddress(address, cityFromTags(tags));
+    var district = forcedDistrict || inferDistrictFromAddress(city, address, districtFromTags(tags, city));
     return {
       id: el.type + "-" + el.id,
       name: tags.name,
@@ -551,6 +562,105 @@
     });
     if (!response.ok) throw new Error("HTTP " + response.status);
     return response.json();
+  }
+
+  function escapeOverpassString(value) {
+    return String(value || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  }
+
+  function adminAreaQuery(city, district) {
+    var safeCity = escapeOverpassString(city);
+    var safeDistrict = escapeOverpassString(district);
+    var lines = [
+      "[out:json][timeout:25];",
+      'area["name"="' + safeCity + '"]["boundary"="administrative"]->.city;'
+    ];
+
+    var areaRef = "city";
+    if (district && district !== "all") {
+      lines.push('rel(area.city)["name"="' + safeDistrict + '"]["boundary"="administrative"];');
+      lines.push("map_to_area -> .district;");
+      areaRef = "district";
+    }
+
+    lines.push("(");
+    lines.push('nwr(area.' + areaRef + ')["amenity"="restaurant"]["cuisine"~"barbecue|bbq|yakiniku|grill|korean_barbecue",i];');
+    lines.push('nwr(area.' + areaRef + ')["amenity"="restaurant"]["name"~"燒肉|烤肉|炭火|BBQ|Barbecue|Yakiniku",i];');
+    lines.push(");");
+    lines.push("out center tags;");
+    return lines.join("");
+  }
+
+  async function loadAdministrativePlaces(city, district) {
+    if (!city || city === "all") {
+      applyFilters();
+      return;
+    }
+
+    var requestId = ++state.adminRequestId;
+    var label = city + (district && district !== "all" ? " " + district : "");
+    dom.mapStatus.textContent = "正在搜尋 " + label + " 的烤肉店…";
+    dom.venueList.innerHTML = '<div class="empty-card">正在搜尋 ' + safe(label) + ' 的店家…</div>';
+
+    var endpoints = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter"
+    ];
+    var data = null;
+    var lastError = null;
+    var query = adminAreaQuery(city, district);
+
+    for (var i = 0; i < endpoints.length; i += 1) {
+      try {
+        data = await fetchOverpass(endpoints[i], query);
+        if (data && Array.isArray(data.elements)) break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (requestId !== state.adminRequestId) return;
+
+    if (!data || !Array.isArray(data.elements)) {
+      dom.mapStatus.textContent = label + " 的行政區搜尋暫時無法連線，先使用目前已載入資料篩選";
+      console.warn("Administrative Overpass failed", lastError);
+      applyFilters();
+      return;
+    }
+
+    var merged = new Map(state.places.map(function (place) { return [place.id, place]; }));
+    data.elements.forEach(function (el) {
+      var place = transformElement(
+        el,
+        city,
+        district && district !== "all" ? district : ""
+      );
+      if (place) merged.set(place.id, place);
+    });
+
+    state.places = Array.from(merged.values());
+    updateDistances();
+    dom.venueCount.textContent = state.places.length;
+
+    var keepDistrict = dom.districtFilter ? dom.districtFilter.value : "all";
+    populateDistrictFilter();
+    if (dom.districtFilter && keepDistrict && Array.from(dom.districtFilter.options).some(function (option) {
+      return option.value === keepDistrict;
+    })) {
+      dom.districtFilter.value = keepDistrict;
+    }
+
+    populateBookingVenues();
+    applyFilters();
+
+    var exactCount = state.places.filter(function (place) {
+      var cityMatch = normalizeAdminText(place.city) === normalizeAdminText(city);
+      var districtMatch = !district || district === "all" ||
+        normalizeAdminText(place.district) === normalizeAdminText(district);
+      return cityMatch && districtMatch;
+    }).length;
+
+    dom.mapStatus.textContent = "已載入 " + label + " 的 " + exactCount + " 間烤肉店公開資料";
   }
 
   async function loadPlaces() {
@@ -809,6 +919,7 @@
 
   function populateDistrictFilter() {
     if (!dom.cityFilter || !dom.districtFilter) return;
+    var previous = dom.districtFilter.value || "all";
     var city = dom.cityFilter.value;
     if (city === "all") {
       dom.districtFilter.innerHTML = '<option value="all">請先選縣市</option>';
@@ -829,6 +940,10 @@
         var count = counts[district] || 0;
         return '<option value="' + safe(district) + '">' + safe(district) + (count ? " (" + count + ")" : "") + '</option>';
       }).join("");
+
+    if (previous !== "all" && districts.indexOf(previous) !== -1) {
+      dom.districtFilter.value = previous;
+    }
   }
 
   function updateMapAreaLabel() {
@@ -1274,20 +1389,37 @@
 
   if (dom.cityFilter) {
     dom.cityFilter.addEventListener("change", function () {
+      if (dom.districtFilter) dom.districtFilter.value = "all";
       populateDistrictFilter();
-      applyFilters();
+
+      var city = dom.cityFilter.value;
+      if (city === "all") {
+        state.adminRequestId += 1;
+        applyFilters();
+        dom.mapStatus.textContent = "已切換為全台資料，可繼續使用關鍵字與特色篩選";
+      } else {
+        loadAdministrativePlaces(city, "all");
+      }
     });
   }
   if (dom.districtFilter) {
     dom.districtFilter.addEventListener("change", function () {
-      applyFilters();
+      var city = dom.cityFilter ? dom.cityFilter.value : "all";
+      var district = dom.districtFilter.value;
+      if (city === "all") {
+        applyFilters();
+        return;
+      }
+      loadAdministrativePlaces(city, district);
     });
   }
   if (dom.resetAreaFilters) {
     dom.resetAreaFilters.addEventListener("click", function () {
+      state.adminRequestId += 1;
       dom.cityFilter.value = "all";
       populateDistrictFilter();
       applyFilters();
+      dom.mapStatus.textContent = "已清除行政區條件，顯示全台店家";
     });
   }
   document.querySelectorAll(".feature-chip").forEach(function (chip) {

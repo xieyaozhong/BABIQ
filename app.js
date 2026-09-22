@@ -6,7 +6,10 @@
     markerLayer: null,
     places: [],
     filtered: [],
-    selectedId: null
+    selectedId: null,
+    userLocation: null,
+    userMarker: null,
+    nearbyLoaded: false
   };
 
   var dom = {
@@ -17,6 +20,13 @@
     searchInput: document.getElementById("searchInput"),
     regionFilter: document.getElementById("regionFilter"),
     priceFilter: document.getElementById("priceFilter"),
+    sortFilter: document.getElementById("sortFilter"),
+    locateMe: document.getElementById("locateMe"),
+    locateMeHero: document.getElementById("locateMeHero"),
+    locationSummary: document.getElementById("locationSummary"),
+    quickDate: document.getElementById("quickDate"),
+    quickParty: document.getElementById("quickParty"),
+    quickNearbySearch: document.getElementById("quickNearbySearch"),
     reloadPlaces: document.getElementById("reloadPlaces"),
     bookingVenue: document.getElementById("bookingVenue"),
     bookingDate: document.getElementById("bookingDate"),
@@ -33,6 +43,57 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function normalizeUrl(value) {
+    var raw = String(value || "").trim();
+    if (!raw || /^(yes|no)$/i.test(raw)) return "";
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^www\./i.test(raw)) return "https://" + raw;
+    return "";
+  }
+
+  function distanceKm(lat1, lon1, lat2, lon2) {
+    var toRad = function (deg) { return deg * Math.PI / 180; };
+    var earth = 6371;
+    var dLat = toRad(lat2 - lat1);
+    var dLon = toRad(lon2 - lon1);
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return earth * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function updateDistances() {
+    if (!state.userLocation) return;
+    state.places.forEach(function (place) {
+      place.distanceKm = distanceKm(
+        state.userLocation.lat,
+        state.userLocation.lon,
+        place.lat,
+        place.lon
+      );
+    });
+  }
+
+  function mapSearchUrl(place) {
+    return "https://www.google.com/maps/search/?api=1&query=" +
+      encodeURIComponent(place.name + " " + (place.address || ""));
+  }
+
+  function bookingSearchUrl(place) {
+    return "https://www.google.com/search?q=" +
+      encodeURIComponent(place.name + " " + (place.address || "") + " 訂位");
+  }
+
+  function bookingHref(place) {
+    return normalizeUrl(place.bookingUrl) || normalizeUrl(place.website) || bookingSearchUrl(place);
+  }
+
+  function bookingLabel(place) {
+    if (normalizeUrl(place.bookingUrl)) return "直接訂位";
+    if (normalizeUrl(place.website)) return "官網 / 訂位";
+    return "搜尋訂位";
   }
 
   function initMap() {
@@ -124,7 +185,14 @@
       cuisine: tags.cuisine || "",
       openingHours: tags.opening_hours || "營業時間待確認",
       phone: tags.phone || tags["contact:phone"] || "",
-      website: tags.website || tags["contact:website"] || "",
+      website: normalizeUrl(tags.website || tags["contact:website"] || ""),
+      bookingUrl: normalizeUrl(
+        tags["reservation:url"] ||
+        tags["contact:reservation"] ||
+        tags["contact:booking"] ||
+        tags.booking ||
+        ""
+      ),
       features: featuresFromTags(tags),
       priceTier: price.tier,
       priceLabel: price.label,
@@ -180,7 +248,7 @@
       return;
     }
 
-    var unique = new Map();
+    var unique = new Map(state.places.map(function (place) { return [place.id, place]; }));
     data.elements.forEach(function (el) {
       var place = transformElement(el);
       if (place) unique.set(place.id, place);
@@ -188,7 +256,8 @@
 
     state.places = Array.from(unique.values())
       .sort(function (a, b) { return a.name.localeCompare(b.name, "zh-Hant"); })
-      .slice(0, 450);
+      .slice(0, 500);
+    updateDistances();
 
     dom.venueCount.textContent = state.places.length;
     dom.mapStatus.textContent = "已載入 " + state.places.length + " 間公開地圖資料；店家資料仍可能有缺漏";
@@ -196,6 +265,114 @@
 
     populateBookingVenues();
     applyFilters();
+  }
+
+  async function loadNearbyPlaces(lat, lon) {
+    dom.mapStatus.textContent = "正在搜尋你附近 12 公里的烤肉店…";
+
+    var radius = 12000;
+    var query = [
+      "[out:json][timeout:20];",
+      "(",
+      'nwr(around:' + radius + "," + lat + "," + lon + ')["amenity"="restaurant"]["cuisine"~"barbecue|bbq|yakiniku|grill|korean_barbecue",i];',
+      'nwr(around:' + radius + "," + lat + "," + lon + ')["amenity"="restaurant"]["name"~"燒肉|烤肉|炭火|BBQ|Barbecue|Yakiniku",i];',
+      ");",
+      "out center tags;"
+    ].join("");
+
+    var endpoints = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter"
+    ];
+    var data = null;
+
+    for (var i = 0; i < endpoints.length; i += 1) {
+      try {
+        data = await fetchOverpass(endpoints[i], query);
+        if (data && Array.isArray(data.elements)) break;
+      } catch (error) {
+        console.warn("Nearby Overpass failed", error);
+      }
+    }
+
+    if (!data || !Array.isArray(data.elements)) {
+      dom.mapStatus.textContent = "已取得你的位置，但附近店家服務暫時無法連線；仍可使用全台資料";
+      return;
+    }
+
+    var merged = new Map(state.places.map(function (place) { return [place.id, place]; }));
+    data.elements.forEach(function (el) {
+      var place = transformElement(el);
+      if (place) merged.set(place.id, place);
+    });
+
+    state.places = Array.from(merged.values()).slice(0, 500);
+    state.nearbyLoaded = true;
+    updateDistances();
+    populateBookingVenues();
+    applyFilters();
+
+    var nearbyCount = state.places.filter(function (place) {
+      return Number.isFinite(place.distanceKm) && place.distanceKm <= 12;
+    }).length;
+
+    dom.mapStatus.textContent = "已找到 " + nearbyCount + " 間距離你 12 公里內的公開烤肉店資料";
+  }
+
+  function requestUserLocation(scrollToMap) {
+    if (!navigator.geolocation) {
+      dom.locationSummary.textContent = "此瀏覽器不支援定位";
+      dom.mapStatus.textContent = "無法使用定位功能，仍可瀏覽全台店家";
+      return;
+    }
+
+    dom.locationSummary.textContent = "正在取得目前位置…";
+    if (dom.locateMe) dom.locateMe.disabled = true;
+    if (dom.locateMeHero) dom.locateMeHero.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(function (position) {
+      var lat = position.coords.latitude;
+      var lon = position.coords.longitude;
+      state.userLocation = { lat: lat, lon: lon };
+      dom.locationSummary.textContent = "已取得位置 · 優先顯示最近店家";
+      dom.sortFilter.value = "nearby";
+      updateDistances();
+
+      if (state.map) {
+        if (state.userMarker) state.map.removeLayer(state.userMarker);
+        state.userMarker = L.circleMarker([lat, lon], {
+          radius: 8,
+          color: "#ffffff",
+          weight: 3,
+          fillColor: "#2f86ff",
+          fillOpacity: 1
+        }).addTo(state.map).bindPopup("你目前的位置");
+        state.map.setView([lat, lon], 13);
+      }
+
+      applyFilters();
+      loadNearbyPlaces(lat, lon);
+
+      if (scrollToMap) {
+        document.getElementById("map-section").scrollIntoView({ behavior: "smooth" });
+      }
+
+      if (dom.locateMe) dom.locateMe.disabled = false;
+      if (dom.locateMeHero) dom.locateMeHero.disabled = false;
+    }, function (error) {
+      var message = "未開啟定位 · 可繼續瀏覽全台";
+      if (error && error.code === 1) message = "定位權限未開啟 · 可手動瀏覽全台";
+      dom.locationSummary.textContent = message;
+      dom.mapStatus.textContent = "未取得位置，店家清單會以全台資料顯示";
+      if (dom.sortFilter) dom.sortFilter.value = "name";
+      if (dom.locateMe) dom.locateMe.disabled = false;
+      if (dom.locateMeHero) dom.locateMeHero.disabled = false;
+      applyFilters();
+    }, {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 300000
+    });
   }
 
   function matchesFilters(place) {
@@ -217,6 +394,19 @@
 
   function applyFilters() {
     state.filtered = state.places.filter(matchesFilters);
+
+    if (dom.sortFilter && dom.sortFilter.value === "nearby" && state.userLocation) {
+      state.filtered.sort(function (a, b) {
+        var da = Number.isFinite(a.distanceKm) ? a.distanceKm : Infinity;
+        var db = Number.isFinite(b.distanceKm) ? b.distanceKm : Infinity;
+        return da - db;
+      });
+    } else {
+      state.filtered.sort(function (a, b) {
+        return a.name.localeCompare(b.name, "zh-Hant");
+      });
+    }
+
     dom.resultCount.textContent = state.filtered.length + " 間";
     renderList();
     renderMarkers();
@@ -233,16 +423,27 @@
         return '<span class="tag">' + safe(f) + "</span>";
       }).join("");
 
+      var distance = Number.isFinite(place.distanceKm)
+        ? (place.distanceKm < 1 ? Math.round(place.distanceKm * 1000) + " m" : place.distanceKm.toFixed(1) + " km")
+        : "";
+      var booking = bookingHref(place);
+      var official = normalizeUrl(place.website);
+      var phoneLine = place.phone ? " · " + safe(place.phone) : "";
+
       return '<article class="venue-card' + (state.selectedId === place.id ? " active" : "") + '" data-id="' + safe(place.id) + '">' +
         '<div class="venue-card-top">' +
-          "<h3>" + safe(place.name) + "</h3>" +
+          '<div><h3>' + safe(place.name) + '</h3>' +
+          (distance ? '<span class="distance-tag">📍 ' + safe(distance) + ' 距離你</span>' : '') + '</div>' +
           '<span class="price-tag">' + safe(place.priceLabel) + "</span>" +
         "</div>" +
-        '<div class="venue-meta">' + safe(regionLabel(place.region)) + " · " + safe(place.address) + "<br>" + safe(place.openingHours) + "</div>" +
+        '<div class="venue-meta">' + safe(regionLabel(place.region)) + " · " + safe(place.address) +
+          "<br>" + safe(place.openingHours) + phoneLine + "</div>" +
         '<div class="venue-tags">' + tags + "</div>" +
-        '<div class="venue-actions">' +
+        '<div class="venue-actions venue-actions-links">' +
+          '<a class="venue-action primary" href="' + safe(booking) + '" target="_blank" rel="noopener noreferrer">🗓 ' + safe(bookingLabel(place)) + '</a>' +
           '<button type="button" data-action="map">地圖定位</button>' +
-          '<button type="button" data-action="book">查空位</button>' +
+          '<a class="venue-action" href="' + safe(mapSearchUrl(place)) + '" target="_blank" rel="noopener noreferrer">Google 地圖</a>' +
+          (official ? '<a class="venue-action" href="' + safe(official) + '" target="_blank" rel="noopener noreferrer">官網</a>' : '') +
         "</div>" +
       "</article>";
     }).join("");
@@ -268,7 +469,9 @@
         .bindPopup(
           "<strong>" + safe(place.name) + "</strong><br>" +
           safe(place.address) + "<br>" +
-          '<span style="color:#ffb36b">' + safe(place.priceLabel) + "</span>"
+          '<span style="color:#ffb36b">' + safe(place.priceLabel) + "</span>" +
+          (Number.isFinite(place.distanceKm) ? "<br>距離你 " + safe(place.distanceKm.toFixed(1)) + " km" : "") +
+          '<br><a href="' + safe(bookingHref(place)) + '" target="_blank" rel="noopener noreferrer" style="color:#ffb36b;font-weight:700">前往訂位</a>'
         )
         .on("click", function () {
           selectVenue(place.id, false);
@@ -277,7 +480,9 @@
       bounds.push([place.lat, place.lon]);
     });
 
-    if (bounds.length && state.filtered.length < 80) {
+    if (state.userLocation && dom.sortFilter && dom.sortFilter.value === "nearby") {
+      state.map.setView([state.userLocation.lat, state.userLocation.lon], 12);
+    } else if (bounds.length && state.filtered.length < 80) {
       state.map.fitBounds(bounds, { padding: [34, 34], maxZoom: 13 });
     } else {
       state.map.setView([23.72, 120.96], 7);
@@ -309,6 +514,10 @@
     var local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
     dom.bookingDate.min = local.toISOString().slice(0, 10);
     dom.bookingDate.value = local.toISOString().slice(0, 10);
+    if (dom.quickDate) {
+      dom.quickDate.min = local.toISOString().slice(0, 10);
+      dom.quickDate.value = local.toISOString().slice(0, 10);
+    }
   }
 
   function seededNumber(seed) {
@@ -357,16 +566,43 @@
     }
   });
 
-  [dom.searchInput, dom.regionFilter, dom.priceFilter].forEach(function (control) {
+  [dom.searchInput, dom.regionFilter, dom.priceFilter, dom.sortFilter].forEach(function (control) {
+    if (!control) return;
     control.addEventListener(control === dom.searchInput ? "input" : "change", applyFilters);
   });
 
   dom.reloadPlaces.addEventListener("click", loadPlaces);
   dom.availabilityForm.addEventListener("submit", renderAvailability);
 
+  if (dom.locateMe) {
+    dom.locateMe.addEventListener("click", function () { requestUserLocation(true); });
+  }
+  if (dom.locateMeHero) {
+    dom.locateMeHero.addEventListener("click", function () { requestUserLocation(true); });
+  }
+  if (dom.quickNearbySearch) {
+    dom.quickNearbySearch.addEventListener("click", function () {
+      if (dom.quickDate && dom.bookingDate) dom.bookingDate.value = dom.quickDate.value;
+      if (dom.quickParty && dom.partySize) dom.partySize.value = dom.quickParty.value;
+      if (state.userLocation) {
+        dom.sortFilter.value = "nearby";
+        applyFilters();
+        document.getElementById("map-section").scrollIntoView({ behavior: "smooth" });
+      } else {
+        requestUserLocation(true);
+      }
+    });
+  }
+  if (dom.quickParty) {
+    dom.quickParty.addEventListener("change", function () {
+      dom.partySize.value = dom.quickParty.value;
+    });
+  }
+
   initMap();
   setDefaultBookingDate();
   loadPlaces();
+  requestUserLocation(false);
 
   // ------------------------------------------------------------
   // Pixel BBQ Game

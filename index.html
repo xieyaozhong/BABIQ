@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#17120f">
   <meta name="description" content="BABIQ 全台烤肉探索：找燒肉、查特色與價位，搭配 3 分鐘像素烤肉挑戰。">
-  <title>BABIQ｜全台烤肉地圖</title>
+  <title>BABIQ｜全台烤肉探索</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -100,14 +100,14 @@
           <p class="eyebrow">BBQ DISCOVERY</p>
           <h2>附近與全台烤肉店</h2>
         </div>
-        <p>依定位、縣市、行政區、價位與關鍵字快速找店，直接查看距離、營業資訊、官網與訂位入口</p>
+        <p>支援多關鍵字搜尋、熱門特色、行政區、價位與距離排序，店家卡片會優先呈現可確認的價位來源與特色</p>
       </div>
 
       <div class="discovery-shell">
         <aside class="filters discovery-filters" aria-label="店家篩選">
           <label>
             <span>搜尋</span>
-            <input id="searchInput" type="search" placeholder="店名、特色、地址">
+            <input id="searchInput" type="search" placeholder="例：台中 吃到飽 和牛 可訂位" autocomplete="off">
           </label>
           <label>
             <span>縣市</span>
@@ -144,6 +144,19 @@
             </select>
           </label>
           <label>
+            <span>特色</span>
+            <select id="featureFilter">
+              <option value="all">不限特色</option>
+              <option value="buffet">吃到飽 / 放題</option>
+              <option value="japanese">日式燒肉</option>
+              <option value="korean">韓式燒肉</option>
+              <option value="wagyu">和牛</option>
+              <option value="reservation">可預約</option>
+              <option value="outdoor">戶外座位</option>
+              <option value="takeaway">可外帶</option>
+            </select>
+          </label>
+          <label>
             <span>價位</span>
             <select id="priceFilter">
               <option value="all">不限</option>
@@ -156,7 +169,9 @@
           <label>
             <span>排序</span>
             <select id="sortFilter">
+              <option value="relevance">最符合搜尋</option>
               <option value="nearby">離我最近</option>
+              <option value="price-low">價位由低到高</option>
               <option value="name">店名</option>
             </select>
           </label>
@@ -164,6 +179,14 @@
           <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取資料</button>
           <button id="resetAreaFilters" class="btn btn-small btn-ghost" type="button">清除行政區</button>
           <p id="mapStatus" class="helper discovery-status" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
+          <div class="feature-shortcuts" aria-label="熱門特色">
+            <button type="button" class="feature-chip active" data-feature="all">全部</button>
+            <button type="button" class="feature-chip" data-feature="buffet">吃到飽</button>
+            <button type="button" class="feature-chip" data-feature="wagyu">和牛</button>
+            <button type="button" class="feature-chip" data-feature="japanese">日式</button>
+            <button type="button" class="feature-chip" data-feature="korean">韓式</button>
+            <button type="button" class="feature-chip" data-feature="reservation">可預約</button>
+          </div>
         </aside>
 
         <div class="results-head">

@@ -35,7 +35,16 @@
     partySize: document.getElementById("partySize"),
     availabilityForm: document.getElementById("availabilityForm"),
     slotTitle: document.getElementById("slotTitle"),
-    slotResults: document.getElementById("slotResults")
+    slotResults: document.getElementById("slotResults"),
+    locationGuide: document.getElementById("locationGuide"),
+    locationGuideIntro: document.getElementById("locationGuideIntro"),
+    locationGuideDenied: document.getElementById("locationGuideDenied"),
+    locationGuideLoading: document.getElementById("locationGuideLoading"),
+    locationGuideSuccess: document.getElementById("locationGuideSuccess"),
+    locationPermissionSteps: document.getElementById("locationPermissionSteps"),
+    locationPermissionButton: document.getElementById("locationPermissionButton"),
+    retryLocationButton: document.getElementById("retryLocationButton"),
+    viewNearbyButton: document.getElementById("viewNearbyButton")
   };
 
 
@@ -516,13 +525,100 @@
     dom.mapStatus.textContent = "已找到 " + nearbyCount + " 間距離你 12 公里內的公開烤肉店資料";
   }
 
-  function requestUserLocation(scrollToMap) {
+  function locationPlatformSteps() {
+    var ua = navigator.userAgent || "";
+    var isIOS = /iPhone|iPad|iPod/i.test(ua);
+    var isAndroid = /Android/i.test(ua);
+    var isSafari = isIOS && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
+
+    if (isIOS && isSafari) {
+      return [
+        "確認 iPhone「設定 → 隱私權與安全性 → 定位服務」已開啟",
+        "回到 Safari，點網址列左側的頁面選單（aA／頁面圖示）",
+        "進入「網站設定」，把「位置」改成「允許」",
+        "回到 BABIQ，按「我已開啟，重新偵測」"
+      ];
+    }
+
+    if (isIOS) {
+      return [
+        "打開 iPhone「設定 → 隱私權與安全性 → 定位服務」",
+        "找到目前使用的瀏覽器，允許它取用位置",
+        "回到 BABIQ，重新整理頁面",
+        "按「我已開啟，重新偵測」"
+      ];
+    }
+
+    if (isAndroid) {
+      return [
+        "點網址列左側的網站資訊／權限圖示",
+        "進入「權限」或「網站設定」",
+        "將「位置」改成「允許」",
+        "回到 BABIQ，按「我已開啟，重新偵測」"
+      ];
+    }
+
+    return [
+      "點瀏覽器網址列左側的網站資訊／權限圖示",
+      "找到「位置」或 Location 權限",
+      "將權限改成「允許」",
+      "重新整理 BABIQ，再按「我已開啟，重新偵測」"
+    ];
+  }
+
+  function setLocationGuideState(name) {
+    var states = {
+      intro: dom.locationGuideIntro,
+      denied: dom.locationGuideDenied,
+      loading: dom.locationGuideLoading,
+      success: dom.locationGuideSuccess
+    };
+
+    Object.keys(states).forEach(function (key) {
+      if (states[key]) states[key].hidden = key !== name;
+    });
+  }
+
+  function openLocationGuide(stateName) {
+    if (!dom.locationGuide) return;
+    setLocationGuideState(stateName || "intro");
+    dom.locationGuide.hidden = false;
+    dom.locationGuide.setAttribute("aria-hidden", "false");
+    document.body.classList.add("location-guide-open");
+
+    if (stateName === "denied" && dom.locationPermissionSteps) {
+      dom.locationPermissionSteps.innerHTML = locationPlatformSteps().map(function (step) {
+        return "<li>" + safe(step) + "</li>";
+      }).join("");
+    }
+  }
+
+  function closeLocationGuide() {
+    if (!dom.locationGuide) return;
+    dom.locationGuide.hidden = true;
+    dom.locationGuide.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("location-guide-open");
+  }
+
+  function showLocationEntry() {
+    if (state.userLocation) {
+      dom.sortFilter.value = "nearby";
+      applyFilters();
+      document.getElementById("discovery-section").scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    openLocationGuide("intro");
+  }
+
+  function requestUserLocation(scrollToResults) {
     if (!navigator.geolocation) {
       dom.locationSummary.textContent = "此瀏覽器不支援定位";
       dom.mapStatus.textContent = "無法使用定位功能，仍可瀏覽全台店家";
+      openLocationGuide("denied");
       return;
     }
 
+    openLocationGuide("loading");
     dom.locationSummary.textContent = "正在取得目前位置…";
     if (dom.locateMe) dom.locateMe.disabled = true;
     if (dom.locateMeHero) dom.locateMeHero.disabled = true;
@@ -531,28 +627,38 @@
       var lat = position.coords.latitude;
       var lon = position.coords.longitude;
       state.userLocation = { lat: lat, lon: lon };
-      dom.locationSummary.textContent = "已取得位置 · 優先顯示最近店家";
+      dom.locationSummary.textContent = "定位已開啟 · 優先顯示最近店家";
       dom.sortFilter.value = "nearby";
       updateDistances();
 
       applyFilters();
       loadNearbyPlaces(lat, lon);
+      openLocationGuide("success");
 
-      if (scrollToMap) {
-        document.getElementById("discovery-section").scrollIntoView({ behavior: "smooth" });
+      if (scrollToResults === false) {
+        closeLocationGuide();
       }
 
-      if (dom.locateMe) dom.locateMe.disabled = false;
+      if (dom.locateMe) {
+        dom.locateMe.disabled = false;
+        dom.locateMe.textContent = "✓ 定位已開啟";
+      }
       if (dom.locateMeHero) dom.locateMeHero.disabled = false;
     }, function (error) {
-      var message = "未開啟定位 · 可繼續瀏覽全台";
-      if (error && error.code === 1) message = "定位權限未開啟 · 可手動瀏覽全台";
-      dom.locationSummary.textContent = message;
-      dom.mapStatus.textContent = "未取得位置，店家清單會以全台資料顯示";
-      if (dom.sortFilter) dom.sortFilter.value = "name";
+      var permissionDenied = error && error.code === 1;
+      dom.locationSummary.textContent = permissionDenied
+        ? "定位權限未開啟 · 點這裡查看設定方式"
+        : "暫時無法取得位置 · 可重新嘗試";
+
+      dom.mapStatus.textContent = permissionDenied
+        ? "定位權限目前被阻擋，請依照引導開啟後再重新偵測"
+        : "暫時無法取得位置，請確認裝置定位服務與網路後再試";
+
+      if (dom.sortFilter) dom.sortFilter.value = "relevance";
       if (dom.locateMe) dom.locateMe.disabled = false;
       if (dom.locateMeHero) dom.locateMeHero.disabled = false;
       applyFilters();
+      openLocationGuide("denied");
     }, {
       enableHighAccuracy: false,
       timeout: 10000,
@@ -902,11 +1008,36 @@
   dom.availabilityForm.addEventListener("submit", renderAvailability);
 
   if (dom.locateMe) {
-    dom.locateMe.addEventListener("click", function () { requestUserLocation(true); });
+    dom.locateMe.addEventListener("click", showLocationEntry);
   }
   if (dom.locateMeHero) {
-    dom.locateMeHero.addEventListener("click", function () { requestUserLocation(true); });
+    dom.locateMeHero.addEventListener("click", showLocationEntry);
   }
+
+  if (dom.locationPermissionButton) {
+    dom.locationPermissionButton.addEventListener("click", function () {
+      requestUserLocation(true);
+    });
+  }
+  if (dom.retryLocationButton) {
+    dom.retryLocationButton.addEventListener("click", function () {
+      requestUserLocation(true);
+    });
+  }
+  if (dom.viewNearbyButton) {
+    dom.viewNearbyButton.addEventListener("click", function () {
+      closeLocationGuide();
+      document.getElementById("discovery-section").scrollIntoView({ behavior: "smooth" });
+    });
+  }
+  document.querySelectorAll("[data-location-close]").forEach(function (control) {
+    control.addEventListener("click", closeLocationGuide);
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && dom.locationGuide && !dom.locationGuide.hidden) {
+      closeLocationGuide();
+    }
+  });
   if (dom.quickNearbySearch) {
     dom.quickNearbySearch.addEventListener("click", function () {
       if (dom.quickDate && dom.bookingDate) dom.bookingDate.value = dom.quickDate.value;
@@ -916,7 +1047,7 @@
         applyFilters();
         document.getElementById("discovery-section").scrollIntoView({ behavior: "smooth" });
       } else {
-        requestUserLocation(true);
+        showLocationEntry();
       }
     });
   }
@@ -928,7 +1059,6 @@
 
   setDefaultBookingDate();
   loadPlaces();
-  requestUserLocation(false);
 
   // ------------------------------------------------------------
   // Pixel BBQ Game

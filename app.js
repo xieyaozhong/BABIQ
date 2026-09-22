@@ -30,6 +30,12 @@
     quickParty: document.getElementById("quickParty"),
     quickNearbySearch: document.getElementById("quickNearbySearch"),
     reloadPlaces: document.getElementById("reloadPlaces"),
+    brandPresetList: document.getElementById("brandPresetList"),
+    brandBookingSelect: document.getElementById("brandBookingSelect"),
+    brandBookingInfo: document.getElementById("brandBookingInfo"),
+    brandBookingName: document.getElementById("brandBookingName"),
+    brandBookingNote: document.getElementById("brandBookingNote"),
+    brandBookingLink: document.getElementById("brandBookingLink"),
     bookingVenue: document.getElementById("bookingVenue"),
     bookingDate: document.getElementById("bookingDate"),
     partySize: document.getElementById("partySize"),
@@ -118,6 +124,51 @@
       priceSource: "燒肉眾官方菜單",
       priceSourceUrl: "https://www.yuanchuang.com.tw/zh-TW/pages/%E7%87%92%E8%82%89%E7%9C%BE%E4%B8%80%E4%BB%A3%E5%BA%97%E7%BE%8E%E5%91%B3%E8%8F%9C%E5%96%AE",
       features: ["120分鐘吃到飽", "海鮮", "和牛升級", "小菜甜點", "可預約"]
+    }
+  ];
+
+  var bookingBrands = [
+    {
+      id: "kanpai",
+      name: "乾杯燒肉",
+      aliases: ["乾杯燒肉", "乾杯列車", "KANPAI"],
+      officialUrl: "https://www.kanpaiyakiniku.com.tw/zh/branch",
+      note: "官方門市頁提供線上訂位；乾杯集團公告官方授權平台包含 inline、OpenTable、OpenRice、FunNow"
+    },
+    {
+      id: "powerofmeat",
+      name: "肉次方",
+      aliases: ["肉次方"],
+      officialUrl: "https://www.powerofmeat.com.tw/shop-location",
+      note: "官方門市頁可選分店並前往線上訂位"
+    },
+    {
+      id: "tianji",
+      name: "田季發爺",
+      aliases: ["田季發爺"],
+      officialUrl: "https://www.tianji.com.tw/store/",
+      note: "官方門市頁提供各分店電話與訂位資訊"
+    },
+    {
+      id: "yakiniku-zhong",
+      name: "燒肉眾",
+      aliases: ["燒肉眾"],
+      officialUrl: "https://www.yuanchuang.com.tw/zh-TW/pages/%E7%87%92%E8%82%89%E7%9C%BE%E4%B8%80%E4%BB%A3%E5%BA%97-%E7%B7%9A%E4%B8%8A%E8%A8%82%E4%BD%8D",
+      note: "元創國際餐飲官方線上訂位入口"
+    },
+    {
+      id: "umai",
+      name: "屋馬燒肉",
+      aliases: ["屋馬燒肉", "屋馬"],
+      officialUrl: "https://www.umai.tw/",
+      note: "屋馬官網提供線上訂位入口"
+    },
+    {
+      id: "yakiyan",
+      name: "原燒",
+      aliases: ["原燒", "Yakiyan"],
+      officialUrl: "https://www.yakiyan.com/",
+      note: "原燒官方門市頁提供各店線上訂位"
     }
   ];
 
@@ -901,12 +952,107 @@
     renderList();
   }
 
-  function populateBookingVenues() {
-    var options = ['<option value="">選擇店家</option>'];
-    state.places.slice(0, 450).forEach(function (place) {
-      options.push('<option value="' + safe(place.id) + '">' + safe(place.name) + "</option>");
+  function getBookingBrand(id) {
+    return bookingBrands.find(function (brand) { return brand.id === id; }) || null;
+  }
+
+  function brandMatchesPlace(brand, place) {
+    if (!brand || !place) return false;
+    var name = String(place.name || "").toLowerCase();
+    return brand.aliases.some(function (alias) {
+      return name.indexOf(String(alias).toLowerCase()) !== -1;
     });
+  }
+
+  function bookingBrandCount(brand) {
+    return state.places.filter(function (place) {
+      return brandMatchesPlace(brand, place);
+    }).length;
+  }
+
+  function renderBookingBrands() {
+    if (dom.brandBookingSelect) {
+      var current = dom.brandBookingSelect.value || "all";
+      dom.brandBookingSelect.innerHTML = '<option value="all">全部品牌 / 自由選店</option>' +
+        bookingBrands.map(function (brand) {
+          var count = bookingBrandCount(brand);
+          return '<option value="' + safe(brand.id) + '">' + safe(brand.name) +
+            (count ? " (" + count + " 間)" : "") + '</option>';
+        }).join("");
+      dom.brandBookingSelect.value = bookingBrands.some(function (b) { return b.id === current; }) ? current : "all";
+    }
+
+    if (dom.brandPresetList) {
+      var selected = dom.brandBookingSelect ? dom.brandBookingSelect.value : "all";
+      dom.brandPresetList.innerHTML = bookingBrands.map(function (brand) {
+        var count = bookingBrandCount(brand);
+        return '<button type="button" class="brand-preset' + (selected === brand.id ? " active" : "") +
+          '" data-brand="' + safe(brand.id) + '">' +
+          '<span>' + safe(brand.name) + '</span>' +
+          '<small>' + (count ? count + " 間已載入" : "官方訂位") + '</small>' +
+        '</button>';
+      }).join("");
+    }
+  }
+
+  function updateBrandBookingInfo(brandId) {
+    if (!dom.brandBookingInfo) return;
+    var brand = getBookingBrand(brandId);
+    if (!brand) {
+      dom.brandBookingInfo.hidden = true;
+      return;
+    }
+
+    dom.brandBookingInfo.hidden = false;
+    dom.brandBookingName.textContent = brand.name + " 官方訂位";
+    dom.brandBookingNote.textContent = brand.note;
+    dom.brandBookingLink.href = brand.officialUrl;
+  }
+
+  function populateBookingVenues() {
+    if (!dom.bookingVenue) return;
+    var brandId = dom.brandBookingSelect ? dom.brandBookingSelect.value : "all";
+    var brand = getBookingBrand(brandId);
+    var places = state.places.slice(0, 450);
+
+    if (brand) {
+      places = places.filter(function (place) {
+        return brandMatchesPlace(brand, place);
+      });
+    }
+
+    var options = ['<option value="">選擇店家 / 分店</option>'];
+    if (!places.length && brand) {
+      options.push('<option value="" disabled>目前公開資料未載入此品牌分店</option>');
+    } else {
+      places.forEach(function (place) {
+        options.push('<option value="' + safe(place.id) + '">' + safe(place.name) + "</option>");
+      });
+    }
+
     dom.bookingVenue.innerHTML = options.join("");
+    updateBrandBookingInfo(brandId);
+    renderBookingBrands();
+  }
+
+  function selectBookingBrand(brandId) {
+    if (!dom.brandBookingSelect) return;
+    dom.brandBookingSelect.value = brandId || "all";
+    dom.bookingVenue.value = "";
+    populateBookingVenues();
+
+    document.querySelectorAll(".brand-preset").forEach(function (button) {
+      button.classList.toggle("active", button.getAttribute("data-brand") === dom.brandBookingSelect.value);
+    });
+
+    var brand = getBookingBrand(dom.brandBookingSelect.value);
+    if (brand) {
+      dom.slotTitle.textContent = brand.name + " · 請選擇分店";
+      dom.slotResults.innerHTML = '<div class="slot-placeholder">內建時段為示範資料；真實空位請使用上方品牌官方訂位入口</div>';
+    } else {
+      dom.slotTitle.textContent = "選一間店開始查詢";
+      dom.slotResults.innerHTML = '<div class="slot-placeholder">查詢後會顯示 17:00–22:00 的示範時段</div>';
+    }
   }
 
   function setDefaultBookingDate() {
@@ -937,7 +1083,10 @@
     var place = state.places.find(function (p) { return p.id === id; });
 
     if (!place || !date) {
-      dom.slotTitle.textContent = "請先選擇店家與日期";
+      var selectedBrand = dom.brandBookingSelect ? getBookingBrand(dom.brandBookingSelect.value) : null;
+      dom.slotTitle.textContent = selectedBrand
+        ? selectedBrand.name + " · 請先選擇分店與日期"
+        : "請先選擇店家與日期";
       return;
     }
 
@@ -1003,6 +1152,24 @@
       });
     });
   }
+
+  if (dom.brandBookingSelect) {
+    dom.brandBookingSelect.addEventListener("change", function () {
+      selectBookingBrand(dom.brandBookingSelect.value);
+    });
+  }
+
+  if (dom.brandPresetList) {
+    dom.brandPresetList.addEventListener("click", function (event) {
+      var button = event.target.closest(".brand-preset");
+      if (!button) return;
+      selectBookingBrand(button.getAttribute("data-brand"));
+      document.getElementById("availability").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  renderBookingBrands();
+  populateBookingVenues();
 
   dom.reloadPlaces.addEventListener("click", loadPlaces);
   dom.availabilityForm.addEventListener("submit", renderAvailability);

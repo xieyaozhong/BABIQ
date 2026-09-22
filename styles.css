@@ -1582,3 +1582,31 @@ body.location-guide-open{overflow:hidden}
     border-radius:10px;
   }
 }
+
+
+/* BBQ game result */
+.game-result-card{
+  display:grid;
+  gap:5px;
+  margin-top:10px;
+  padding:14px 16px;
+  border:1px solid #6b4b2f;
+  border-radius:13px;
+  background:linear-gradient(135deg,#241711,#1a1310);
+  box-shadow:inset 0 0 0 1px rgba(255,174,96,.04);
+}
+.game-result-card[hidden]{display:none}
+.game-result-card small{
+  color:#bd8b5d;
+  font-size:9px;
+  letter-spacing:.15em;
+}
+.game-result-card strong{
+  color:#ffe0a8;
+  font-size:18px;
+}
+.game-result-card span{
+  color:#b7a79c;
+  font-size:11px;
+  line-height:1.55;
+}

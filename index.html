@@ -112,13 +112,37 @@
             <input id="searchInput" type="search" placeholder="店名、特色、地址">
           </label>
           <label>
-            <span>區域</span>
-            <select id="regionFilter">
-              <option value="all">全台</option>
-              <option value="north">北部</option>
-              <option value="central">中部</option>
-              <option value="south">南部</option>
-              <option value="east">東部</option>
+            <span>縣市</span>
+            <select id="cityFilter">
+              <option value="all">全台灣</option>
+              <option value="臺北市">臺北市</option>
+              <option value="新北市">新北市</option>
+              <option value="桃園市">桃園市</option>
+              <option value="臺中市">臺中市</option>
+              <option value="臺南市">臺南市</option>
+              <option value="高雄市">高雄市</option>
+              <option value="基隆市">基隆市</option>
+              <option value="新竹市">新竹市</option>
+              <option value="新竹縣">新竹縣</option>
+              <option value="苗栗縣">苗栗縣</option>
+              <option value="彰化縣">彰化縣</option>
+              <option value="南投縣">南投縣</option>
+              <option value="雲林縣">雲林縣</option>
+              <option value="嘉義市">嘉義市</option>
+              <option value="嘉義縣">嘉義縣</option>
+              <option value="屏東縣">屏東縣</option>
+              <option value="宜蘭縣">宜蘭縣</option>
+              <option value="花蓮縣">花蓮縣</option>
+              <option value="臺東縣">臺東縣</option>
+              <option value="澎湖縣">澎湖縣</option>
+              <option value="金門縣">金門縣</option>
+              <option value="連江縣">連江縣</option>
+            </select>
+          </label>
+          <label>
+            <span>行政區</span>
+            <select id="districtFilter" disabled>
+              <option value="all">請先選縣市</option>
             </select>
           </label>
           <label>
@@ -140,10 +164,18 @@
           </label>
           <button id="locateMe" class="btn btn-small btn-primary" type="button">📍 使用我的位置</button>
           <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取全台資料</button>
-          <p id="mapStatus" class="helper" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
+          <button id="resetAreaFilters" class="btn btn-small btn-ghost" type="button">清除行政區</button>
+          <p id="mapStatus" class="helper map-status-wide" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
         </aside>
 
         <div class="map-stage">
+          <div class="map-toolbar">
+            <div>
+              <strong id="mapAreaTitle">全台烤肉地圖</strong>
+              <span id="mapAreaSubtitle">選擇縣市與行政區可快速縮放</span>
+            </div>
+            <button id="fitResults" type="button" class="map-toolbar-button">顯示全部結果</button>
+          </div>
           <div id="map" aria-label="台灣烤肉店地圖"></div>
           <div class="map-legend">
             <span><i class="legend-dot"></i> 燒肉 / BBQ / 烤肉</span>

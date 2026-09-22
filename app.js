@@ -76,7 +76,7 @@
   var brandProfiles = [
     {
       match: /乾杯燒肉|KANPAI/i,
-      priceTier: "$",
+      priceTier: "$$",
       priceMin: 99,
       priceLabel: "單點 NT$99–399｜午餐 NT$399 起",
       priceSource: "乾杯官方 2026",
@@ -85,7 +85,7 @@
     },
     {
       match: /肉次方/i,
-      priceTier: "$$",
+      priceTier: "$$$",
       priceMin: 658,
       priceLabel: "NT$658–1,598 / 人",
       priceSource: "王品集團 2026",
@@ -94,7 +94,7 @@
     },
     {
       match: /田季發爺/i,
-      priceTier: "$",
+      priceTier: "$$",
       priceMin: 658,
       priceLabel: "NT$658 / 838 / 988 +10%",
       priceSource: "田季發爺官方菜單",
@@ -103,7 +103,7 @@
     },
     {
       match: /燒肉眾/i,
-      priceTier: "$",
+      priceTier: "$$",
       priceMin: 599,
       priceLabel: "NT$599 / 799 / 999 +10%",
       priceSource: "燒肉眾官方菜單",
@@ -282,9 +282,15 @@
 
     if (normalized) {
       var tier = "unknown";
-      if (/^\$\$\$/.test(normalized)) tier = "$$";
-      else if (/^\$\$/.test(normalized)) tier = "$";
+      var numericMin = parsePriceMin(normalized);
+      if (/^\$\$\$/.test(normalized)) tier = "$$$";
+      else if (/^\$\$/.test(normalized)) tier = "$$";
       else if (/^\$/.test(normalized)) tier = "$";
+      else if (Number.isFinite(numericMin)) {
+        if (numericMin < 400) tier = "$";
+        else if (numericMin < 900) tier = "$$";
+        else tier = "$$$";
+      }
 
       return {
         tier: tier,

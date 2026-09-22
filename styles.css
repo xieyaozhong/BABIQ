@@ -274,3 +274,67 @@ footer strong{color:#fff;letter-spacing:.14em}
   .roadmap-grid{grid-template-columns:1fr}
   footer{flex-direction:column;padding:24px 18px}
 }
+
+/* Booking-style nearby discovery */
+.quick-search{
+  position:relative;z-index:20;
+  max-width:1220px;margin:-32px auto 42px;
+  padding:8px;
+  display:grid;grid-template-columns:1.25fr 1fr .8fr auto;
+  gap:2px;
+  border:1px solid #5a412f;border-radius:18px;
+  background:#261c16;
+  box-shadow:0 22px 60px rgba(0,0,0,.34);
+}
+.quick-search-field{
+  min-width:0;min-height:68px;
+  display:flex;align-items:center;gap:12px;
+  padding:10px 15px;border-radius:12px;
+  background:#17120f;
+}
+.quick-search-field small{
+  display:block;margin-bottom:5px;
+  color:#9f9187;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase
+}
+.quick-search-field strong{font-size:14px;line-height:1.35}
+.quick-search-field input,
+.quick-search-field select{
+  width:100%;min-height:auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;
+  font-size:14px;font-weight:800
+}
+.quick-search-field input:focus,
+.quick-search-field select:focus{border:0;box-shadow:none}
+.quick-icon{font-size:20px;flex:0 0 auto}
+.quick-search-button{min-width:160px;border-radius:12px}
+.distance-tag{
+  display:inline-flex;align-items:center;margin-top:5px;padding:4px 7px;border-radius:999px;
+  background:#18251b;color:#94dfa0;font-size:10px;font-weight:800
+}
+.venue-actions-links{display:flex;flex-wrap:wrap}
+.venue-actions-links .venue-action,
+.venue-actions-links button{
+  flex:1 1 calc(50% - 4px);
+  display:flex;align-items:center;justify-content:center;
+  min-height:35px;border:1px solid #49372d;border-radius:9px;
+  background:#201713;color:#fff;padding:8px;font-size:11px;font-weight:700
+}
+.venue-actions-links .venue-action.primary{
+  border-color:#8a4c2d;background:#5a2c1d;color:#ffe7d8
+}
+.venue-actions-links .venue-action:hover,
+.venue-actions-links button:hover{border-color:#9e6243;background:#2c1d16}
+.user-location-pulse{box-shadow:0 0 0 7px rgba(47,134,255,.15)}
+
+@media (max-width:900px){
+  .quick-search{
+    margin:-20px 18px 36px;
+    grid-template-columns:1fr 1fr
+  }
+  .location-field{grid-column:1/-1}
+  .quick-search-button{grid-column:1/-1}
+}
+@media (max-width:560px){
+  .quick-search{grid-template-columns:1fr}
+  .location-field,.quick-search-button{grid-column:auto}
+  .quick-search-field{min-height:62px}
+}

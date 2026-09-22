@@ -2,16 +2,11 @@
   "use strict";
 
   var state = {
-    map: null,
-    markerLayer: null,
     places: [],
     filtered: [],
     selectedId: null,
     userLocation: null,
-    userMarker: null,
-    nearbyLoaded: false,
-    mapResizeObserver: null,
-    mapResizeTimer: null
+    nearbyLoaded: false
   };
 
   var dom = {
@@ -25,7 +20,6 @@
     resetAreaFilters: document.getElementById("resetAreaFilters"),
     mapAreaTitle: document.getElementById("mapAreaTitle"),
     mapAreaSubtitle: document.getElementById("mapAreaSubtitle"),
-    fitResults: document.getElementById("fitResults"),
     priceFilter: document.getElementById("priceFilter"),
     sortFilter: document.getElementById("sortFilter"),
     locateMe: document.getElementById("locateMe"),
@@ -136,54 +130,6 @@
     if (normalizeUrl(place.bookingUrl)) return "直接訂位";
     if (normalizeUrl(place.website)) return "官網 / 訂位";
     return "搜尋訂位";
-  }
-
-  function scheduleMapResize(delay) {
-    if (!state.map) return;
-    if (state.mapResizeTimer) clearTimeout(state.mapResizeTimer);
-    state.mapResizeTimer = setTimeout(function () {
-      if (!state.map) return;
-      state.map.invalidateSize({ pan: false, debounceMoveend: true });
-    }, typeof delay === "number" ? delay : 80);
-  }
-
-  function initMap() {
-    if (!window.L) {
-      dom.mapStatus.textContent = "地圖元件載入失敗，請重新整理頁面";
-      return;
-    }
-
-    state.map = L.map("map", {
-      zoomControl: true,
-      scrollWheelZoom: true,
-      minZoom: 6
-    }).setView([23.72, 120.96], 7);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(state.map);
-
-    state.markerLayer = L.layerGroup().addTo(state.map);
-
-    scheduleMapResize(0);
-    scheduleMapResize(180);
-
-    var mapStage = document.querySelector(".map-stage");
-    if (mapStage && "ResizeObserver" in window) {
-      state.mapResizeObserver = new ResizeObserver(function () {
-        scheduleMapResize(40);
-      });
-      state.mapResizeObserver.observe(mapStage);
-    }
-
-    window.addEventListener("resize", function () {
-      scheduleMapResize(80);
-    }, { passive: true });
-
-    window.addEventListener("orientationchange", function () {
-      scheduleMapResize(180);
-    }, { passive: true });
   }
 
   function regionFromCoords(lat, lon) {
@@ -462,24 +408,11 @@
       dom.sortFilter.value = "nearby";
       updateDistances();
 
-      if (state.map) {
-        if (state.userMarker) state.map.removeLayer(state.userMarker);
-        state.userMarker = L.circleMarker([lat, lon], {
-          radius: 8,
-          color: "#ffffff",
-          weight: 3,
-          fillColor: "#2f86ff",
-          fillOpacity: 1
-        }).addTo(state.map).bindPopup("你目前的位置");
-        state.map.setView([lat, lon], 13);
-        scheduleMapResize(50);
-      }
-
       applyFilters();
       loadNearbyPlaces(lat, lon);
 
       if (scrollToMap) {
-        document.getElementById("map-section").scrollIntoView({ behavior: "smooth" });
+        document.getElementById("discovery-section").scrollIntoView({ behavior: "smooth" });
       }
 
       if (dom.locateMe) dom.locateMe.disabled = false;
@@ -537,19 +470,6 @@
     dom.mapAreaSubtitle.textContent = state.filtered.length + " 間符合條件的店家";
   }
 
-  function fitFilteredResults() {
-    if (!state.map || !state.filtered.length) return;
-    var points = state.filtered.slice(0, 300).map(function (place) {
-      return [place.lat, place.lon];
-    });
-    if (points.length === 1) {
-      state.map.setView(points[0], 15);
-      return;
-    }
-    state.map.fitBounds(points, { padding: [38, 38], maxZoom: 14 });
-    scheduleMapResize(40);
-  }
-
   function matchesFilters(place) {
     var keyword = dom.searchInput.value.trim().toLowerCase();
     var city = dom.cityFilter ? dom.cityFilter.value : "all";
@@ -589,10 +509,7 @@
 
     dom.resultCount.textContent = state.filtered.length + " 間";
     renderList();
-    renderMarkers();
     updateMapAreaLabel();
-    scheduleMapResize(20);
-    if (fitMap) fitFilteredResults();
   }
 
   function renderList() {
@@ -624,7 +541,6 @@
         '<div class="venue-tags">' + tags + "</div>" +
         '<div class="venue-actions venue-actions-links">' +
           '<a class="venue-action primary" href="' + safe(booking) + '" target="_blank" rel="noopener noreferrer">🗓 ' + safe(bookingLabel(place)) + '</a>' +
-          '<button type="button" data-action="map">地圖定位</button>' +
           '<a class="venue-action" href="' + safe(mapSearchUrl(place)) + '" target="_blank" rel="noopener noreferrer">Google 地圖</a>' +
           (official ? '<a class="venue-action" href="' + safe(official) + '" target="_blank" rel="noopener noreferrer">官網</a>' : '') +
         "</div>" +
@@ -632,51 +548,12 @@
     }).join("");
   }
 
-  function markerIcon() {
-    return L.divIcon({
-      className: "",
-      html: '<div class="bbq-marker"></div>',
-      iconSize: [30, 30],
-      iconAnchor: [15, 28],
-      popupAnchor: [0, -28]
-    });
-  }
-
-  function renderMarkers() {
-    if (!state.map || !state.markerLayer) return;
-    state.markerLayer.clearLayers();
-
-    var bounds = [];
-    state.filtered.slice(0, 300).forEach(function (place) {
-      var marker = L.marker([place.lat, place.lon], { icon: markerIcon() })
-        .bindPopup(
-          "<strong>" + safe(place.name) + "</strong><br>" +
-          safe(place.address) + "<br>" +
-          '<span style="color:#ffb36b">' + safe(place.priceLabel) + "</span>" +
-          (Number.isFinite(place.distanceKm) ? "<br>距離你 " + safe(place.distanceKm.toFixed(1)) + " km" : "") +
-          '<br><a href="' + safe(bookingHref(place)) + '" target="_blank" rel="noopener noreferrer" style="color:#ffb36b;font-weight:700">前往訂位</a>'
-        )
-        .on("click", function () {
-          selectVenue(place.id, false);
-        });
-      marker.addTo(state.markerLayer);
-      bounds.push([place.lat, place.lon]);
-    });
-
-    // View movement is controlled by location, administrative filters, or the
-    // explicit "顯示全部結果" button. Re-rendering markers should not steal the map view.
-  }
-
-  function selectVenue(id, zoom) {
+  function selectVenue(id) {
     var place = state.places.find(function (p) { return p.id === id; });
     if (!place) return;
     state.selectedId = id;
     dom.bookingVenue.value = id;
     renderList();
-
-    if (zoom !== false && state.map) {
-      state.map.setView([place.lat, place.lon], 15);
-    }
   }
 
   function populateBookingVenues() {
@@ -736,12 +613,8 @@
     var card = event.target.closest(".venue-card");
     if (!card) return;
     var id = card.getAttribute("data-id");
-    var action = event.target.getAttribute("data-action");
-
-    selectVenue(id, action !== "book");
-    if (action === "book") {
-      document.getElementById("availability").scrollIntoView({ behavior: "smooth" });
-    }
+    if (event.target.closest("a")) return;
+    selectVenue(id);
   });
 
   [dom.searchInput, dom.priceFilter, dom.sortFilter].forEach(function (control) {
@@ -752,25 +625,21 @@
   if (dom.cityFilter) {
     dom.cityFilter.addEventListener("change", function () {
       populateDistrictFilter();
-      applyFilters(true);
+      applyFilters();
     });
   }
   if (dom.districtFilter) {
     dom.districtFilter.addEventListener("change", function () {
-      applyFilters(true);
+      applyFilters();
     });
   }
   if (dom.resetAreaFilters) {
     dom.resetAreaFilters.addEventListener("click", function () {
       dom.cityFilter.value = "all";
       populateDistrictFilter();
-      applyFilters(true);
+      applyFilters();
     });
   }
-  if (dom.fitResults) {
-    dom.fitResults.addEventListener("click", fitFilteredResults);
-  }
-
   dom.reloadPlaces.addEventListener("click", loadPlaces);
   dom.availabilityForm.addEventListener("submit", renderAvailability);
 
@@ -787,7 +656,7 @@
       if (state.userLocation) {
         dom.sortFilter.value = "nearby";
         applyFilters();
-        document.getElementById("map-section").scrollIntoView({ behavior: "smooth" });
+        document.getElementById("discovery-section").scrollIntoView({ behavior: "smooth" });
       } else {
         requestUserLocation(true);
       }
@@ -799,7 +668,6 @@
     });
   }
 
-  initMap();
   setDefaultBookingDate();
   loadPlaces();
   requestUserLocation(false);

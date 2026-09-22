@@ -20,6 +20,7 @@
     resetAreaFilters: document.getElementById("resetAreaFilters"),
     mapAreaTitle: document.getElementById("mapAreaTitle"),
     mapAreaSubtitle: document.getElementById("mapAreaSubtitle"),
+    featureFilter: document.getElementById("featureFilter"),
     priceFilter: document.getElementById("priceFilter"),
     sortFilter: document.getElementById("sortFilter"),
     locateMe: document.getElementById("locateMe"),
@@ -70,6 +71,65 @@
     "Yunlin County":"雲林縣","Chiayi City":"嘉義市","Chiayi County":"嘉義縣","Pingtung County":"屏東縣",
     "Yilan County":"宜蘭縣","Hualien County":"花蓮縣","Taitung County":"臺東縣","Penghu County":"澎湖縣",
     "Kinmen County":"金門縣","Lienchiang County":"連江縣"
+  };
+
+  var brandProfiles = [
+    {
+      match: /乾杯燒肉|KANPAI/i,
+      priceTier: "$",
+      priceMin: 99,
+      priceLabel: "單點 NT$99–399｜午餐 NT$399 起",
+      priceSource: "乾杯官方 2026",
+      priceSourceUrl: "https://www.kanpaiyakiniku.com.tw/zh/news-detail/620",
+      features: ["日本A5和牛", "日式燒肉", "單點", "商業午餐", "可線上訂位"]
+    },
+    {
+      match: /肉次方/i,
+      priceTier: "$$",
+      priceMin: 658,
+      priceLabel: "NT$658–1,598 / 人",
+      priceSource: "王品集團 2026",
+      priceSourceUrl: "https://www.wowprime.com/zh-tw/news/media/260522",
+      features: ["燒肉吃到飽", "5種方案", "原塊牛排", "和牛", "可預約"]
+    },
+    {
+      match: /田季發爺/i,
+      priceTier: "$",
+      priceMin: 658,
+      priceLabel: "NT$658 / 838 / 988 +10%",
+      priceSource: "田季發爺官方菜單",
+      priceSourceUrl: "https://www.tianji.com.tw/menu/",
+      features: ["120分鐘吃到飽", "日式燒肉", "海陸", "火鍋", "宵夜"]
+    },
+    {
+      match: /燒肉眾/i,
+      priceTier: "$",
+      priceMin: 599,
+      priceLabel: "NT$599 / 799 / 999 +10%",
+      priceSource: "燒肉眾官方菜單",
+      priceSourceUrl: "https://www.yuanchuang.com.tw/zh-TW/pages/%E7%87%92%E8%82%89%E7%9C%BE%E4%B8%80%E4%BB%A3%E5%BA%97%E7%BE%8E%E5%91%B3%E8%8F%9C%E5%96%AE",
+      features: ["120分鐘吃到飽", "海鮮", "和牛升級", "小菜甜點", "可預約"]
+    }
+  ];
+
+  var searchAliases = {
+    "台北": ["臺北","台北"],
+    "台中": ["臺中","台中"],
+    "台南": ["臺南","台南"],
+    "台東": ["臺東","台東"],
+    "吃到飽": ["吃到飽","放題","buffet","all you can eat"],
+    "放題": ["吃到飽","放題","buffet"],
+    "和牛": ["和牛","wagyu","a5"],
+    "日式": ["日式","yakiniku","japanese"],
+    "韓式": ["韓式","korean"],
+    "訂位": ["可預約","線上訂位","reservation","booking"],
+    "預約": ["可預約","reservation","booking"],
+    "戶外": ["戶外座位","outdoor"],
+    "外帶": ["可外帶","takeaway"],
+    "無障礙": ["無障礙","wheelchair"],
+    "燒肉": ["燒肉","烤肉","yakiniku","barbecue","bbq","grill"],
+    "烤肉": ["燒肉","烤肉","barbecue","bbq","grill"],
+    "bbq": ["bbq","barbecue","燒肉","烤肉"]
   };
 
   function safe(value) {
@@ -205,30 +265,88 @@
     return parts.length ? parts.join("") : "地址待 OpenStreetMap 補充";
   }
 
-  function getPrice(tags) {
-    var raw = tags.price_range || tags.price || tags.charge || "";
-    var normalized = String(raw).trim();
-    if (!normalized) return { tier: "unknown", label: "價位待確認" };
-    if (/^\$\$\$/.test(normalized)) return { tier: "$$$", label: normalized };
-    if (/^\$\$/.test(normalized)) return { tier: "$$", label: normalized };
-    if (/^\$/.test(normalized)) return { tier: "$", label: normalized };
-    return { tier: "unknown", label: normalized };
+  function findBrandProfile(name) {
+    return brandProfiles.find(function (profile) {
+      return profile.match.test(String(name || ""));
+    }) || null;
   }
 
-  function featuresFromTags(tags) {
-    var features = [];
-    var cuisine = tags.cuisine || "";
-    var text = cuisine.toLowerCase();
+  function parsePriceMin(value) {
+    var match = String(value || "").replace(/,/g, "").match(/(\d{2,5})/);
+    return match ? Number(match[1]) : Infinity;
+  }
 
-    if (/yakiniku/.test(text)) features.push("日式燒肉");
-    if (/korean/.test(text)) features.push("韓式烤肉");
+  function getPrice(tags, name) {
+    var raw = tags.price_range || tags.price || tags.charge || tags.cost || tags.fee || "";
+    var normalized = String(raw).trim();
+
+    if (normalized) {
+      var tier = "unknown";
+      if (/^\$\$\$/.test(normalized)) tier = "$$";
+      else if (/^\$\$/.test(normalized)) tier = "$";
+      else if (/^\$/.test(normalized)) tier = "$";
+
+      return {
+        tier: tier,
+        label: normalized,
+        min: parsePriceMin(normalized),
+        source: "OpenStreetMap 公開欄位",
+        sourceUrl: ""
+      };
+    }
+
+    var profile = findBrandProfile(name);
+    if (profile) {
+      return {
+        tier: profile.priceTier,
+        label: profile.priceLabel,
+        min: profile.priceMin,
+        source: profile.priceSource,
+        sourceUrl: profile.priceSourceUrl
+      };
+    }
+
+    return {
+      tier: "unknown",
+      label: "價位待確認",
+      min: Infinity,
+      source: "",
+      sourceUrl: ""
+    };
+  }
+
+  function featuresFromTags(tags, name) {
+    var features = [];
+    var cuisine = String(tags.cuisine || "");
+    var text = (cuisine + " " + String(name || "")).toLowerCase();
+    var profile = findBrandProfile(name);
+
+    if (/yakiniku|日式|焼肉/.test(text)) features.push("日式燒肉");
+    if (/korean|韓式|韓國/.test(text)) features.push("韓式燒肉");
     if (/barbecue|bbq|grill/.test(text)) features.push("BBQ");
+    if (/和牛|wagyu|a5/.test(text)) features.push("和牛");
+    if (/吃到飽|放題|buffet|all.you.can.eat/.test(text)) features.push("吃到飽");
+    if (/炭火|charcoal/.test(text)) features.push("炭火燒肉");
+    if (/海鮮|seafood/.test(text)) features.push("海鮮");
+
     if (tags.outdoor_seating === "yes") features.push("戶外座位");
-    if (tags.reservation === "yes") features.push("可預約");
+    if (tags.reservation === "yes" || tags.booking === "yes" || tags["reservation:url"]) features.push("可預約");
     if (tags.wheelchair === "yes") features.push("無障礙");
     if (tags.takeaway === "yes") features.push("可外帶");
+    if (tags.delivery === "yes") features.push("可外送");
+    if (tags.internet_access === "wlan" || tags.internet_access === "yes") features.push("Wi-Fi");
+    if (tags.air_conditioning === "yes") features.push("冷氣");
+    if (tags["diet:vegetarian"] === "yes") features.push("素食選項");
+    if (tags["payment:credit_cards"] === "yes") features.push("可刷卡");
+
+    if (profile) features = profile.features.concat(features);
+
+    features = features.filter(function (item, index, arr) {
+      return item && arr.indexOf(item) === index;
+    });
+
     if (!features.length) features.push("燒肉 / 烤肉");
-    return features.slice(0, 4);
+    return features.slice(0, 7);
   }
 
   function transformElement(el) {
@@ -237,7 +355,7 @@
     var lon = el.lon || (el.center && el.center.lon);
     if (!lat || !lon || !tags.name) return null;
 
-    var price = getPrice(tags);
+    var price = getPrice(tags, tags.name);
     var address = formatAddress(tags);
     var city = cityFromTags(tags);
     var district = inferDistrictFromAddress(city, address, districtFromTags(tags, city));
@@ -261,9 +379,12 @@
         tags.booking ||
         ""
       ),
-      features: featuresFromTags(tags),
+      features: featuresFromTags(tags, tags.name),
       priceTier: price.tier,
       priceLabel: price.label,
+      priceMin: price.min,
+      priceSource: price.source,
+      priceSourceUrl: price.sourceUrl,
       source: "OpenStreetMap"
     };
   }
@@ -309,7 +430,7 @@
     }
 
     if (!data || !Array.isArray(data.elements)) {
-      dom.mapStatus.textContent = "公開地圖服務目前沒有回應，可稍後按「重新抓取地圖資料」";
+      dom.mapStatus.textContent = "公開地圖服務目前沒有回應，可稍後按「重新抓取店家資料」";
       dom.venueList.innerHTML = '<div class="empty-card">暫時無法取得店家。這不影響下方 3 分鐘烤肉遊戲。</div>';
       dom.reloadPlaces.disabled = false;
       console.warn(lastError);
@@ -328,7 +449,7 @@
     updateDistances();
 
     dom.venueCount.textContent = state.places.length;
-    dom.mapStatus.textContent = "已載入 " + state.places.length + " 間公開地圖資料；店家資料仍可能有缺漏";
+    dom.mapStatus.textContent = "已載入 " + state.places.length + " 間公開店家資料；店家資料仍可能有缺漏";
     dom.reloadPlaces.disabled = false;
 
     populateBookingVenues();
@@ -461,45 +582,152 @@
     if (!dom.mapAreaTitle || !dom.mapAreaSubtitle) return;
     var city = dom.cityFilter ? dom.cityFilter.value : "all";
     var district = dom.districtFilter ? dom.districtFilter.value : "all";
-    var title = "全台烤肉地圖";
+    var title = "全台烤肉店";
 
-    if (city !== "all") title = city + "烤肉地圖";
-    if (city !== "all" && district !== "all") title = city + " " + district + "烤肉地圖";
+    if (city !== "all") title = city + "烤肉店";
+    if (city !== "all" && district !== "all") title = city + " " + district + "烤肉店";
 
     dom.mapAreaTitle.textContent = title;
-    dom.mapAreaSubtitle.textContent = state.filtered.length + " 間符合條件的店家";
+    dom.mapAreaSubtitle.textContent = state.filtered.length + " 間符合條件｜可直接查看價位來源與特色";
+  }
+
+  function normalizeSearchText(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/台/g, "臺")
+      .replace(/[，,、/|]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function queryGroups(query) {
+    var normalized = normalizeSearchText(query);
+    if (!normalized) return [];
+
+    return normalized.split(" ").filter(Boolean).reduce(function (groups, token) {
+      var found = [];
+      Object.keys(searchAliases).forEach(function (key) {
+        var normalizedKey = normalizeSearchText(key);
+        if (token.indexOf(normalizedKey) !== -1) {
+          found.push(searchAliases[key].map(normalizeSearchText));
+        }
+      });
+
+      if (found.length) return groups.concat(found);
+      groups.push([token]);
+      return groups;
+    }, []);
+  }
+
+  function placeSearchText(place) {
+    return normalizeSearchText([
+      place.name,
+      place.address,
+      place.city,
+      place.district,
+      place.cuisine,
+      place.features.join(" "),
+      place.priceLabel
+    ].join(" "));
+  }
+
+  function matchesSearch(place, query) {
+    var groups = queryGroups(query);
+    if (!groups.length) return true;
+    var text = placeSearchText(place);
+
+    return groups.every(function (options) {
+      return options.some(function (option) {
+        return text.indexOf(option) !== -1;
+      });
+    });
+  }
+
+  function featureMatches(place, feature) {
+    if (!feature || feature === "all") return true;
+    var text = normalizeSearchText([place.name, place.cuisine, place.features.join(" ")].join(" "));
+    var patterns = {
+      buffet: /吃到飽|放題|buffet|all you can eat/,
+      japanese: /日式|yakiniku|焼肉/,
+      korean: /韓式|korean/,
+      wagyu: /和牛|wagyu|a5/,
+      reservation: /可預約|線上訂位|reservation|booking/,
+      outdoor: /戶外座位|outdoor/,
+      takeaway: /可外帶|takeaway/
+    };
+    return patterns[feature] ? patterns[feature].test(text) : true;
+  }
+
+  function searchScore(place, query) {
+    var groups = queryGroups(query);
+    if (!groups.length) return 0;
+
+    var name = normalizeSearchText(place.name);
+    var location = normalizeSearchText((place.city || "") + " " + (place.district || ""));
+    var features = normalizeSearchText(place.features.join(" "));
+    var cuisine = normalizeSearchText(place.cuisine);
+    var address = normalizeSearchText(place.address);
+    var score = 0;
+
+    groups.forEach(function (options) {
+      options.forEach(function (option) {
+        if (name.indexOf(option) !== -1) score = Math.max(score, score + 12);
+        else if (features.indexOf(option) !== -1) score += 8;
+        else if (location.indexOf(option) !== -1) score += 6;
+        else if (cuisine.indexOf(option) !== -1) score += 5;
+        else if (address.indexOf(option) !== -1) score += 3;
+      });
+    });
+
+    if (place.priceSource) score += 1;
+    if (normalizeUrl(place.bookingUrl) || normalizeUrl(place.website)) score += 1;
+    return score;
+  }
+
+  function priceSearchUrl(place) {
+    return "https://www.google.com/search?q=" +
+      encodeURIComponent(place.name + " " + (place.address || "") + " 菜單 價格");
   }
 
   function matchesFilters(place) {
-    var keyword = dom.searchInput.value.trim().toLowerCase();
+    var keyword = dom.searchInput.value.trim();
     var city = dom.cityFilter ? dom.cityFilter.value : "all";
     var district = dom.districtFilter ? dom.districtFilter.value : "all";
+    var feature = dom.featureFilter ? dom.featureFilter.value : "all";
     var price = dom.priceFilter.value;
-
-    var haystack = [
-      place.name,
-      place.address,
-      place.cuisine,
-      place.features.join(" ")
-    ].join(" ").toLowerCase();
 
     var cityHaystack = normalizeAdminText((place.city || "") + " " + (place.address || ""));
     var districtHaystack = normalizeAdminText((place.district || "") + " " + (place.address || ""));
 
-    return (!keyword || haystack.indexOf(keyword) !== -1) &&
+    return matchesSearch(place, keyword) &&
+      featureMatches(place, feature) &&
       (city === "all" || cityHaystack.indexOf(normalizeAdminText(city)) !== -1) &&
       (district === "all" || districtHaystack.indexOf(normalizeAdminText(district)) !== -1) &&
       (price === "all" || place.priceTier === price);
   }
 
-  function applyFilters(fitMap) {
+  function applyFilters() {
     state.filtered = state.places.filter(matchesFilters);
+    var keyword = dom.searchInput.value.trim();
+    var sort = dom.sortFilter ? dom.sortFilter.value : "relevance";
 
-    if (dom.sortFilter && dom.sortFilter.value === "nearby" && state.userLocation) {
+    if (sort === "nearby" && state.userLocation) {
       state.filtered.sort(function (a, b) {
         var da = Number.isFinite(a.distanceKm) ? a.distanceKm : Infinity;
         var db = Number.isFinite(b.distanceKm) ? b.distanceKm : Infinity;
         return da - db;
+      });
+    } else if (sort === "price-low") {
+      state.filtered.sort(function (a, b) {
+        var pa = Number.isFinite(a.priceMin) ? a.priceMin : Infinity;
+        var pb = Number.isFinite(b.priceMin) ? b.priceMin : Infinity;
+        if (pa !== pb) return pa - pb;
+        return a.name.localeCompare(b.name, "zh-Hant");
+      });
+    } else if (sort === "relevance" && keyword) {
+      state.filtered.sort(function (a, b) {
+        return searchScore(b, keyword) - searchScore(a, keyword) ||
+          a.name.localeCompare(b.name, "zh-Hant");
       });
     } else {
       state.filtered.sort(function (a, b) {
@@ -529,12 +757,17 @@
       var booking = bookingHref(place);
       var official = normalizeUrl(place.website);
       var phoneLine = place.phone ? " · " + safe(place.phone) : "";
+      var priceSource = place.priceSource
+        ? (place.priceSourceUrl
+          ? '<a class="price-source" href="' + safe(place.priceSourceUrl) + '" target="_blank" rel="noopener noreferrer">來源：' + safe(place.priceSource) + '</a>'
+          : '<span class="price-source">來源：' + safe(place.priceSource) + '</span>')
+        : '<a class="price-source price-source-muted" href="' + safe(priceSearchUrl(place)) + '" target="_blank" rel="noopener noreferrer">查目前菜單價位</a>';
 
       return '<article class="venue-card' + (state.selectedId === place.id ? " active" : "") + '" data-id="' + safe(place.id) + '">' +
         '<div class="venue-card-top">' +
           '<div><h3>' + safe(place.name) + '</h3>' +
           (distance ? '<span class="distance-tag">📍 ' + safe(distance) + ' 距離你</span>' : '') + '</div>' +
-          '<span class="price-tag">' + safe(place.priceLabel) + "</span>" +
+          '<div class="price-stack"><span class="price-tag">' + safe(place.priceLabel) + "</span>" + priceSource + "</div>" +
         "</div>" +
         '<div class="venue-meta">' + safe(regionLabel(place.region)) + " · " + safe(place.address) +
           "<br>" + safe(place.openingHours) + phoneLine + "</div>" +
@@ -617,7 +850,7 @@
     selectVenue(id);
   });
 
-  [dom.searchInput, dom.priceFilter, dom.sortFilter].forEach(function (control) {
+  [dom.searchInput, dom.featureFilter, dom.priceFilter, dom.sortFilter].forEach(function (control) {
     if (!control) return;
     control.addEventListener(control === dom.searchInput ? "input" : "change", applyFilters);
   });
@@ -640,6 +873,25 @@
       applyFilters();
     });
   }
+  document.querySelectorAll(".feature-chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var feature = chip.getAttribute("data-feature") || "all";
+      if (dom.featureFilter) dom.featureFilter.value = feature;
+      document.querySelectorAll(".feature-chip").forEach(function (item) {
+        item.classList.toggle("active", item === chip);
+      });
+      applyFilters();
+    });
+  });
+
+  if (dom.featureFilter) {
+    dom.featureFilter.addEventListener("change", function () {
+      document.querySelectorAll(".feature-chip").forEach(function (chip) {
+        chip.classList.toggle("active", chip.getAttribute("data-feature") === dom.featureFilter.value);
+      });
+    });
+  }
+
   dom.reloadPlaces.addEventListener("click", loadPlaces);
   dom.availabilityForm.addEventListener("submit", renderAvailability);
 

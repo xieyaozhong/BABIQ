@@ -338,3 +338,197 @@ footer strong{color:#fff;letter-spacing:.14em}
   .location-field,.quick-search-button{grid-column:auto}
   .quick-search-field{min-height:62px}
 }
+
+
+/* Map-first layout v2 */
+#map-section{
+  max-width:1680px;
+  padding-left:clamp(14px,3vw,48px);
+  padding-right:clamp(14px,3vw,48px);
+}
+#map-section .section-heading{margin-bottom:20px}
+.map-shell{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 340px;
+  grid-template-rows:auto minmax(720px,1fr);
+  min-height:0;
+  border-radius:22px;
+  overflow:hidden;
+}
+.filters{
+  grid-column:1/-1;
+  grid-row:1;
+  display:grid;
+  grid-template-columns:minmax(210px,1.7fr) repeat(4,minmax(120px,1fr)) auto auto auto;
+  align-items:end;
+  gap:10px;
+  padding:12px;
+  border-right:0;
+  border-bottom:1px solid #302720;
+  background:#171310;
+}
+.filters label{min-width:0}
+.filters label span{margin-left:2px}
+.filters input,.filters select{
+  min-height:42px;
+  padding:8px 10px;
+  background:#100d0b;
+}
+.filters .btn{
+  min-height:42px;
+  white-space:nowrap;
+}
+.map-status-wide{
+  grid-column:1/-1;
+  padding:2px 4px 0;
+}
+.map-stage{
+  grid-column:1;
+  grid-row:2;
+  position:relative;
+  min-width:0;
+  min-height:720px;
+}
+#map{
+  width:100%;
+  height:100%;
+  min-height:720px;
+}
+.venue-panel{
+  grid-column:2;
+  grid-row:2;
+  border-left:1px solid #302720;
+  border-top:0;
+}
+.venue-list{
+  max-height:720px;
+  padding:10px;
+}
+.map-toolbar{
+  position:absolute;
+  z-index:600;
+  top:14px;
+  left:50px;
+  right:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  pointer-events:none;
+}
+.map-toolbar>div{
+  min-width:0;
+  padding:10px 13px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:13px;
+  background:rgba(18,15,13,.9);
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+.map-toolbar strong{
+  display:block;
+  font-size:13px;
+}
+.map-toolbar span{
+  display:block;
+  margin-top:3px;
+  color:#ad9e93;
+  font-size:10px;
+}
+.map-toolbar-button{
+  pointer-events:auto;
+  min-height:40px;
+  padding:9px 12px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:11px;
+  background:rgba(18,15,13,.9);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  backdrop-filter:blur(12px);
+}
+.map-toolbar-button:hover{border-color:#8b5b40;background:#241813}
+.map-legend{bottom:12px}
+
+@media (max-width:1280px){
+  .filters{
+    grid-template-columns:minmax(200px,1.5fr) repeat(3,minmax(120px,1fr)) auto auto;
+  }
+  .filters label:nth-of-type(5){grid-column:auto}
+  .map-shell{
+    grid-template-columns:minmax(0,1fr) 310px;
+  }
+}
+
+@media (max-width:980px){
+  .map-shell{
+    grid-template-columns:1fr;
+    grid-template-rows:auto auto auto;
+  }
+  .filters{
+    grid-column:1;
+    grid-row:1;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+  }
+  .filters label:first-child{grid-column:1/-1}
+  .filters .btn{width:100%}
+  .map-stage{
+    grid-column:1;
+    grid-row:2;
+    min-height:600px;
+  }
+  #map{min-height:600px}
+  .venue-panel{
+    grid-column:1;
+    grid-row:3;
+    border-left:0;
+    border-top:1px solid #302720;
+  }
+  .venue-list{
+    max-height:390px;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:640px){
+  #map-section{
+    padding-left:10px;
+    padding-right:10px;
+  }
+  .map-shell{border-radius:17px}
+  .filters{
+    grid-template-columns:1fr 1fr;
+    padding:10px;
+  }
+  .filters label:first-child,
+  .map-status-wide{grid-column:1/-1}
+  .filters .btn{font-size:11px;padding-inline:8px}
+  .map-stage{min-height:540px}
+  #map{min-height:540px}
+  .map-toolbar{
+    left:46px;
+    right:8px;
+    top:8px;
+    align-items:flex-start;
+  }
+  .map-toolbar>div{
+    padding:8px 10px;
+  }
+  .map-toolbar span{display:none}
+  .map-toolbar-button{
+    min-height:36px;
+    padding:7px 9px;
+  }
+  .map-legend{
+    left:8px;
+    right:8px;
+    max-width:none;
+    bottom:8px;
+  }
+  .venue-list{
+    grid-template-columns:1fr;
+    max-height:420px;
+  }
+}

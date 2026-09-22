@@ -312,7 +312,7 @@
       <div class="section-heading">
         <div>
           <p class="eyebrow">PIXEL BBQ KITCHEN</p>
-          <h2>3 分鐘拖曳燒烤挑戰</h2>
+          <h2>2 分鐘拖曳燒烤挑戰</h2>
         </div>
         <p>從備料盤把食材拖上烤網，利用有限空間安排位置與火力；烤好後再拖到出餐區完成料理</p>
       </div>
@@ -320,7 +320,7 @@
       <div class="game-layout">
         <div class="game-console">
           <div class="game-hud">
-            <div><span>TIME</span><strong id="gameTime">03:00</strong></div>
+            <div><span>TIME</span><strong id="gameTime">02:00</strong></div>
             <div><span>SCORE</span><strong id="gameScore">0</strong></div>
             <div><span>SERVED</span><strong id="gameCombo">0</strong></div>
             <div><span>HEAT</span><strong id="heatLevel">100%</strong></div>
@@ -336,7 +336,7 @@
           </div>
 
           <div class="game-controls">
-            <button id="startGame" class="btn btn-primary" type="button">開始 3 分鐘挑戰</button>
+            <button id="startGame" class="btn btn-primary" type="button">開始 2 分鐘挑戰</button>
             <button id="extinguish" class="btn btn-dark" type="button" disabled>灑水降火</button>
             <label class="difficulty-control">
               <span>難度</span>
@@ -348,6 +348,11 @@
             </label>
           </div>
           <p id="gameMessage" class="game-message" aria-live="polite">開始後會先獲得一批隨機食材，拖曳到烤網開始料理</p>
+          <div id="gameResultCard" class="game-result-card" hidden>
+            <small>2-MINUTE RESULT</small>
+            <strong id="gameResultTitle">稱號：烤肉見習生</strong>
+            <span id="gameResultSummary">完成一局後會顯示評價與統計</span>
+          </div>
         </div>
 
         <aside class="ingredient-card">
@@ -366,7 +371,9 @@
             <strong>隨機內容</strong>
             <p>✨ 隱藏食材：低機率出現，高分但烤法更嚴格</p>
             <p>❓ 非食材材料：極低機率混入備料盤，可能改變火力或佔據烤網</p>
-            <p>💨 突發事件：風勢、油脂與炭火仍會改變整體熟成速度</p>
+            <p>💨 突發事件：風勢、油脂、降雨、催單與炭火都會改變節奏</p>
+            <p>🔥 火災：太多燒焦食物留在烤網上會累積火災危險</p>
+            <p>👋 長輩干預：一隻手會突然出現數秒，邊念你邊示範怎麼烤</p>
           </div>
         </aside>
       </div>

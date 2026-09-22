@@ -9,7 +9,9 @@
     selectedId: null,
     userLocation: null,
     userMarker: null,
-    nearbyLoaded: false
+    nearbyLoaded: false,
+    mapResizeObserver: null,
+    mapResizeTimer: null
   };
 
   var dom = {
@@ -136,6 +138,15 @@
     return "搜尋訂位";
   }
 
+  function scheduleMapResize(delay) {
+    if (!state.map) return;
+    if (state.mapResizeTimer) clearTimeout(state.mapResizeTimer);
+    state.mapResizeTimer = setTimeout(function () {
+      if (!state.map) return;
+      state.map.invalidateSize({ pan: false, debounceMoveend: true });
+    }, typeof delay === "number" ? delay : 80);
+  }
+
   function initMap() {
     if (!window.L) {
       dom.mapStatus.textContent = "地圖元件載入失敗，請重新整理頁面";
@@ -154,6 +165,25 @@
     }).addTo(state.map);
 
     state.markerLayer = L.layerGroup().addTo(state.map);
+
+    scheduleMapResize(0);
+    scheduleMapResize(180);
+
+    var mapStage = document.querySelector(".map-stage");
+    if (mapStage && "ResizeObserver" in window) {
+      state.mapResizeObserver = new ResizeObserver(function () {
+        scheduleMapResize(40);
+      });
+      state.mapResizeObserver.observe(mapStage);
+    }
+
+    window.addEventListener("resize", function () {
+      scheduleMapResize(80);
+    }, { passive: true });
+
+    window.addEventListener("orientationchange", function () {
+      scheduleMapResize(180);
+    }, { passive: true });
   }
 
   function regionFromCoords(lat, lon) {
@@ -442,6 +472,7 @@
           fillOpacity: 1
         }).addTo(state.map).bindPopup("你目前的位置");
         state.map.setView([lat, lon], 13);
+        scheduleMapResize(50);
       }
 
       applyFilters();
@@ -516,6 +547,7 @@
       return;
     }
     state.map.fitBounds(points, { padding: [38, 38], maxZoom: 14 });
+    scheduleMapResize(40);
   }
 
   function matchesFilters(place) {
@@ -559,6 +591,7 @@
     renderList();
     renderMarkers();
     updateMapAreaLabel();
+    scheduleMapResize(20);
     if (fitMap) fitFilteredResults();
   }
 

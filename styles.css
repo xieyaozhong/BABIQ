@@ -532,3 +532,170 @@ footer strong{color:#fff;letter-spacing:.14em}
     max-height:420px;
   }
 }
+
+
+/* Map layout stability fix */
+#map-section,
+.map-shell,
+.map-stage,
+.venue-panel,
+.venue-list {
+  min-width:0;
+  max-width:100%;
+}
+
+.map-shell{
+  width:100%;
+  grid-template-rows:auto 720px;
+  align-items:stretch;
+}
+
+.map-stage{
+  position:relative;
+  width:100%;
+  height:720px;
+  min-height:0;
+  overflow:hidden;
+  contain:layout paint;
+}
+
+#map{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  min-height:0;
+  max-width:100%;
+}
+
+#map .leaflet-map-pane,
+#map .leaflet-tile-pane,
+#map .leaflet-overlay-pane{
+  max-width:none;
+}
+
+.venue-panel{
+  height:720px;
+  min-height:0;
+  overflow:hidden;
+}
+
+.venue-list{
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.filters{
+  min-width:0;
+  overflow:visible;
+}
+
+.filters > *{
+  min-width:0;
+}
+
+.filters input,
+.filters select,
+.filters .btn{
+  max-width:100%;
+}
+
+.map-toolbar{
+  max-width:calc(100% - 64px);
+}
+
+.map-toolbar > div{
+  overflow:hidden;
+}
+
+.map-toolbar strong,
+.map-toolbar span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.leaflet-control-container{
+  font-size:initial;
+}
+
+@media (max-width:980px){
+  .map-shell{
+    grid-template-rows:auto 600px auto;
+  }
+
+  .map-stage{
+    width:100%;
+    height:600px;
+    min-height:0;
+  }
+
+  #map{
+    min-height:0;
+    height:100%;
+  }
+
+  .venue-panel{
+    height:auto;
+    max-height:none;
+    overflow:visible;
+  }
+
+  .venue-list{
+    max-height:420px;
+    overflow-y:auto;
+  }
+}
+
+@media (max-width:640px){
+  #map-section{
+    width:100%;
+    overflow:hidden;
+  }
+
+  .map-shell{
+    width:100%;
+    grid-template-rows:auto 520px auto;
+    overflow:hidden;
+  }
+
+  .filters{
+    width:100%;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  }
+
+  .map-stage{
+    width:100%;
+    height:520px;
+    min-height:0;
+    overflow:hidden;
+  }
+
+  #map{
+    width:100%;
+    height:100%;
+    min-height:0;
+  }
+
+  .map-toolbar{
+    left:44px;
+    right:8px;
+    max-width:calc(100% - 52px);
+  }
+
+  .map-toolbar > div{
+    max-width:calc(100% - 104px);
+  }
+
+  .map-toolbar-button{
+    flex:0 0 auto;
+  }
+
+  .map-legend{
+    max-height:76px;
+    overflow:auto;
+  }
+}

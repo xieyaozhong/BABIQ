@@ -230,7 +230,7 @@
             </select>
           </label>
           <label>
-            <span>店家</span>
+            <span>分店 / 店家</span>
             <select id="bookingVenue" required>
               <option value="">先從店家清單選擇</option>
             </select>
@@ -271,6 +271,35 @@
               <span id="brandBookingNote">可直接查看品牌官方門市與訂位資訊</span>
             </div>
             <a id="brandBookingLink" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">前往官方訂位</a>
+          </div>
+
+          <div id="branchDetailCard" class="branch-detail-card" hidden>
+            <div class="branch-detail-head">
+              <div>
+                <small id="branchDetailSource">BRANCH INFO</small>
+                <strong id="branchDetailName">分店資訊</strong>
+              </div>
+              <span id="branchDetailBrand" class="branch-brand-badge"></span>
+            </div>
+            <div class="branch-detail-grid">
+              <div>
+                <small>地址</small>
+                <strong id="branchDetailAddress">—</strong>
+              </div>
+              <div>
+                <small>電話</small>
+                <strong id="branchDetailPhone">—</strong>
+              </div>
+              <div>
+                <small>營業資訊</small>
+                <strong id="branchDetailHours">—</strong>
+              </div>
+            </div>
+            <div class="branch-detail-actions">
+              <a id="branchMapLink" class="btn btn-dark" href="#" target="_blank" rel="noopener noreferrer">Google 地圖</a>
+              <a id="branchPhoneLink" class="btn btn-dark" href="#">撥打分店</a>
+              <a id="branchOfficialLink" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">官方訂位</a>
+            </div>
           </div>
           <div id="slotResults" class="slots" aria-live="polite">
             <div class="slot-placeholder">查詢後會顯示 17:00–22:00 的示範時段</div>

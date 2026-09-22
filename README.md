@@ -5,11 +5,15 @@ BABIQ is a static GitHub Pages MVP for discovering BBQ / yakiniku restaurants ac
 ## Included
 
 - Taiwan-wide interactive Leaflet map
+- Automatic browser geolocation (with user permission) and nearest-first sorting
+- 12 km nearby BBQ discovery using OpenStreetMap / Overpass
 - Live public POI loading from OpenStreetMap / Overpass
 - Search by restaurant name, feature, cuisine, or address
 - North / Central / South / East filters
 - Price-field support when public data contains price information
 - Restaurant list synchronized with map markers
+- Distance-to-user display for nearby restaurants
+- Reservation / official website / Google Maps links on restaurant cards
 - Demo seat-availability query UI with date and party-size selection
 - 180-second pixel BBQ game
 - Multiple ingredients with different flip timing windows

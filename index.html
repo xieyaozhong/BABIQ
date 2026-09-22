@@ -31,14 +31,15 @@
       <div class="hero-copy">
         <p class="eyebrow">全台烤肉情報 × 即時探索 × 像素遊戲</p>
         <h1>今晚想烤哪一間？<br><span>從地圖直接找</span></h1>
-        <p class="hero-lead">用地圖整理台灣燒肉、烤肉、BBQ 與炭火餐廳，快速看地點、特色、營業資訊與價位欄位，再用空位查詢挑時間。</p>
+        <p class="hero-lead">像訂房平台一樣先看「你附近」：BABIQ 會在你允許定位後，自動整理周邊燒肉、烤肉、BBQ 與炭火餐廳，顯示距離、特色、營業資訊與訂位入口。</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="#map-section">開始找烤肉</a>
+          <button id="locateMeHero" class="btn btn-primary" type="button">📍 找我附近的烤肉</button>
+          <a class="btn btn-ghost" href="#map-section">瀏覽全台地圖</a>
           <a class="btn btn-ghost" href="#game">先玩一局</a>
         </div>
         <div class="data-note">
           <span class="status-dot"></span>
-          店家位置主要讀取 OpenStreetMap / Overpass 公開資料；價位與空位會標示資料來源與是否為示範值
+          店家位置與公開資訊主要讀取 OpenStreetMap / Overpass；定位只用來計算附近距離，不會儲存在 BABIQ
         </div>
       </div>
       <div class="hero-visual" aria-hidden="true">
@@ -56,6 +57,38 @@
       </div>
     </section>
 
+    <section class="quick-search" aria-label="附近烤肉快速搜尋">
+      <div class="quick-search-field location-field">
+        <span class="quick-icon" aria-hidden="true">📍</span>
+        <div>
+          <small>位置</small>
+          <strong id="locationSummary">正在準備定位…</strong>
+        </div>
+      </div>
+      <label class="quick-search-field">
+        <span class="quick-icon" aria-hidden="true">📅</span>
+        <div>
+          <small>日期</small>
+          <input id="quickDate" type="date">
+        </div>
+      </label>
+      <label class="quick-search-field">
+        <span class="quick-icon" aria-hidden="true">👥</span>
+        <div>
+          <small>人數</small>
+          <select id="quickParty">
+            <option value="2">2 人</option>
+            <option value="3">3 人</option>
+            <option value="4" selected>4 人</option>
+            <option value="5">5 人</option>
+            <option value="6">6 人</option>
+            <option value="8">8 人</option>
+          </select>
+        </div>
+      </label>
+      <button id="quickNearbySearch" class="btn btn-primary quick-search-button" type="button">搜尋附近烤肉</button>
+    </section>
+
     <section class="stats" aria-label="功能摘要">
       <article><strong id="venueCount">—</strong><span>目前載入店家</span></article>
       <article><strong>3:00</strong><span>每局烤肉挑戰</span></article>
@@ -69,7 +102,7 @@
           <p class="eyebrow">BBQ MAP</p>
           <h2>全台烤肉地圖</h2>
         </div>
-        <p>從公開地圖資料抓取店家；可依關鍵字、區域與價位欄位篩選</p>
+        <p>允許定位後會優先顯示離你最近的店家，也可切回全台瀏覽，並直接前往店家訂位、官網或地圖</p>
       </div>
 
       <div class="map-shell">
@@ -93,12 +126,20 @@
             <select id="priceFilter">
               <option value="all">不限</option>
               <option value="$">$ 平價</option>
-              <option value="$$">$$ 中價</option>
-              <option value="$$$">$$$ 高價</option>
+              <option value="$">$ 中價</option>
+              <option value="$$">$$ 高價</option>
               <option value="unknown">待店家確認</option>
             </select>
           </label>
-          <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取地圖資料</button>
+          <label>
+            <span>排序</span>
+            <select id="sortFilter">
+              <option value="nearby">離我最近</option>
+              <option value="name">店名</option>
+            </select>
+          </label>
+          <button id="locateMe" class="btn btn-small btn-primary" type="button">📍 使用我的位置</button>
+          <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取全台資料</button>
           <p id="mapStatus" class="helper" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
         </aside>
 
@@ -112,7 +153,7 @@
 
         <div class="venue-panel">
           <div class="venue-panel-head">
-            <strong>店家清單</strong>
+            <strong>附近與推薦店家</strong>
             <span id="resultCount">0 間</span>
           </div>
           <div id="venueList" class="venue-list">

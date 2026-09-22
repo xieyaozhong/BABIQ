@@ -4,11 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#17120f">
-  <meta name="description" content="BABIQ 全台烤肉地圖：找燒肉、查特色與價位，搭配 3 分鐘像素烤肉挑戰。">
+  <meta name="description" content="BABIQ 全台烤肉探索：找燒肉、查特色與價位，搭配 3 分鐘像素烤肉挑戰。">
   <title>BABIQ｜全台烤肉地圖</title>
-  <link rel="preconnect" href="https://unpkg.com">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3ynT2xchxFJ0VZ5SAx0rPmxHg1A7M=" crossorigin="">
-  <link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="site-header">
@@ -16,11 +14,11 @@
       <span class="brand-mark" aria-hidden="true">🔥</span>
       <span>
         <strong>BABIQ</strong>
-        <small>TAIWAN BBQ MAP</small>
+        <small>TAIWAN BBQ GUIDE</small>
       </span>
     </a>
     <nav class="nav">
-      <a href="#map-section">烤肉地圖</a>
+      <a href="#discovery-section">找烤肉</a>
       <a href="#availability">空位查詢</a>
       <a href="#game">3 分鐘挑戰</a>
     </nav>
@@ -30,11 +28,11 @@
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">全台烤肉情報 × 即時探索 × 像素遊戲</p>
-        <h1>今晚想烤哪一間？<br><span>從地圖直接找</span></h1>
+        <h1>今晚想烤哪一間？<br><span>直接找到附近店家</span></h1>
         <p class="hero-lead">像訂房平台一樣先看「你附近」：BABIQ 會在你允許定位後，自動整理周邊燒肉、烤肉、BBQ 與炭火餐廳，顯示距離、特色、營業資訊與訂位入口。</p>
         <div class="hero-actions">
           <button id="locateMeHero" class="btn btn-primary" type="button">📍 找我附近的烤肉</button>
-          <a class="btn btn-ghost" href="#map-section">瀏覽全台地圖</a>
+          <a class="btn btn-ghost" href="#discovery-section">瀏覽全台店家</a>
           <a class="btn btn-ghost" href="#game">先玩一局</a>
         </div>
         <div class="data-note">
@@ -93,20 +91,20 @@
       <article><strong id="venueCount">—</strong><span>目前載入店家</span></article>
       <article><strong>3:00</strong><span>每局烤肉挑戰</span></article>
       <article><strong>6</strong><span>目前遊戲食材</span></article>
-      <article><strong>全台</strong><span>地圖探索範圍</span></article>
+      <article><strong>全台</strong><span>商家探索範圍</span></article>
     </section>
 
-    <section id="map-section" class="section">
+    <section id="discovery-section" class="section discovery-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">BBQ MAP</p>
-          <h2>全台烤肉地圖</h2>
+          <p class="eyebrow">BBQ DISCOVERY</p>
+          <h2>附近與全台烤肉店</h2>
         </div>
-        <p>允許定位後會優先顯示離你最近的店家，也可切回全台瀏覽，並直接前往店家訂位、官網或地圖</p>
+        <p>依定位、縣市、行政區、價位與關鍵字快速找店，直接查看距離、營業資訊、官網與訂位入口</p>
       </div>
 
-      <div class="map-shell">
-        <aside class="filters" aria-label="地圖篩選">
+      <div class="discovery-shell">
+        <aside class="filters discovery-filters" aria-label="店家篩選">
           <label>
             <span>搜尋</span>
             <input id="searchInput" type="search" placeholder="店名、特色、地址">
@@ -150,9 +148,9 @@
             <select id="priceFilter">
               <option value="all">不限</option>
               <option value="$">$ 平價</option>
-              <option value="$">$ 中價</option>
-              <option value="$$">$$ 高價</option>
-              <option value="unknown">待店家確認</option>
+              <option value="$$">$$ 中價</option>
+              <option value="$$$">$$$ 高價</option>
+              <option value="unknown">待確認</option>
             </select>
           </label>
           <label>
@@ -163,34 +161,21 @@
             </select>
           </label>
           <button id="locateMe" class="btn btn-small btn-primary" type="button">📍 使用我的位置</button>
-          <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取全台資料</button>
+          <button id="reloadPlaces" class="btn btn-small btn-dark" type="button">重新抓取資料</button>
           <button id="resetAreaFilters" class="btn btn-small btn-ghost" type="button">清除行政區</button>
-          <p id="mapStatus" class="helper map-status-wide" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
+          <p id="mapStatus" class="helper discovery-status" aria-live="polite">準備讀取全台燒烤餐廳資料…</p>
         </aside>
 
-        <div class="map-stage">
-          <div class="map-toolbar">
-            <div>
-              <strong id="mapAreaTitle">全台烤肉地圖</strong>
-              <span id="mapAreaSubtitle">選擇縣市與行政區可快速縮放</span>
-            </div>
-            <button id="fitResults" type="button" class="map-toolbar-button">顯示全部結果</button>
+        <div class="results-head">
+          <div>
+            <strong id="mapAreaTitle">全台烤肉店</strong>
+            <span id="mapAreaSubtitle">可用縣市與行政區縮小搜尋範圍</span>
           </div>
-          <div id="map" aria-label="台灣烤肉店地圖"></div>
-          <div class="map-legend">
-            <span><i class="legend-dot"></i> 燒肉 / BBQ / 烤肉</span>
-            <span>資料不足的店家會標示「待確認」</span>
-          </div>
+          <span id="resultCount">0 間</span>
         </div>
 
-        <div class="venue-panel">
-          <div class="venue-panel-head">
-            <strong>附近與推薦店家</strong>
-            <span id="resultCount">0 間</span>
-          </div>
-          <div id="venueList" class="venue-list">
-            <div class="empty-card">正在載入店家資料…</div>
-          </div>
+        <div id="venueList" class="venue-list discovery-list">
+          <div class="empty-card">正在載入店家資料…</div>
         </div>
       </div>
     </section>
@@ -209,7 +194,7 @@
           <label>
             <span>店家</span>
             <select id="bookingVenue" required>
-              <option value="">先從地圖選擇店家</option>
+              <option value="">先從店家清單選擇</option>
             </select>
           </label>
           <div class="form-row">
@@ -312,10 +297,8 @@
 
   <footer>
     <strong>BABIQ</strong>
-    <span>台灣烤肉地圖 × Pixel BBQ Game</span>
+    <span>台灣烤肉探索 × Pixel BBQ Game</span>
   </footer>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="./app.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>

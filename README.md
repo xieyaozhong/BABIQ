@@ -41,13 +41,11 @@ Then open `http://localhost:8080`.
 
 ## Deployment
 
-A GitHub Pages workflow is included at `.github/workflows/pages.yml`.
+This repository already has GitHub Pages deployment enabled. Updates pushed to `main` are picked up by the repository's existing Pages build/deployment flow.
 
-If Pages has not been enabled for this repository yet, go to:
+Expected public URL:
 
-**Settings → Pages → Build and deployment → Source → GitHub Actions**
-
-Then push to `main` or run the workflow manually.
+`https://xieyaozhong.github.io/BABIQ/`
 
 ## Next integrations
 

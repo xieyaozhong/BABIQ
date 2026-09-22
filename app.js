@@ -18,7 +18,12 @@
     venueList: document.getElementById("venueList"),
     mapStatus: document.getElementById("mapStatus"),
     searchInput: document.getElementById("searchInput"),
-    regionFilter: document.getElementById("regionFilter"),
+    cityFilter: document.getElementById("cityFilter"),
+    districtFilter: document.getElementById("districtFilter"),
+    resetAreaFilters: document.getElementById("resetAreaFilters"),
+    mapAreaTitle: document.getElementById("mapAreaTitle"),
+    mapAreaSubtitle: document.getElementById("mapAreaSubtitle"),
+    fitResults: document.getElementById("fitResults"),
     priceFilter: document.getElementById("priceFilter"),
     sortFilter: document.getElementById("sortFilter"),
     locateMe: document.getElementById("locateMe"),
@@ -34,6 +39,41 @@
     availabilityForm: document.getElementById("availabilityForm"),
     slotTitle: document.getElementById("slotTitle"),
     slotResults: document.getElementById("slotResults")
+  };
+
+
+  var adminDivisions = {
+    "臺北市": ["中正區","大同區","中山區","松山區","大安區","萬華區","信義區","士林區","北投區","內湖區","南港區","文山區"],
+    "新北市": ["萬里區","金山區","板橋區","汐止區","深坑區","石碇區","瑞芳區","平溪區","雙溪區","貢寮區","新店區","坪林區","烏來區","永和區","中和區","土城區","三峽區","樹林區","鶯歌區","三重區","新莊區","泰山區","林口區","蘆洲區","五股區","八里區","淡水區","三芝區","石門區"],
+    "桃園市": ["桃園區","中壢區","平鎮區","八德區","楊梅區","蘆竹區","大溪區","龍潭區","龜山區","大園區","觀音區","新屋區","復興區"],
+    "臺中市": ["中區","東區","南區","西區","北區","西屯區","南屯區","北屯區","豐原區","東勢區","大甲區","清水區","沙鹿區","梧棲區","后里區","神岡區","潭子區","大雅區","新社區","石岡區","外埔區","大安區","烏日區","大肚區","龍井區","霧峰區","太平區","大里區","和平區"],
+    "臺南市": ["新營區","鹽水區","白河區","柳營區","後壁區","東山區","麻豆區","下營區","六甲區","官田區","大內區","佳里區","學甲區","西港區","七股區","將軍區","北門區","新化區","善化區","新市區","安定區","山上區","玉井區","楠西區","南化區","左鎮區","仁德區","歸仁區","關廟區","龍崎區","永康區","東區","南區","北區","安南區","安平區","中西區"],
+    "高雄市": ["鹽埕區","鼓山區","左營區","楠梓區","三民區","新興區","前金區","苓雅區","前鎮區","旗津區","小港區","鳳山區","林園區","大寮區","大樹區","大社區","仁武區","鳥松區","岡山區","橋頭區","燕巢區","田寮區","阿蓮區","路竹區","湖內區","茄萣區","永安區","彌陀區","梓官區","旗山區","美濃區","六龜區","甲仙區","杉林區","內門區","茂林區","桃源區","那瑪夏區"],
+    "基隆市": ["仁愛區","信義區","中正區","中山區","安樂區","暖暖區","七堵區"],
+    "新竹市": ["東區","北區","香山區"],
+    "新竹縣": ["竹北市","關西鎮","新埔鎮","竹東鎮","湖口鄉","橫山鄉","新豐鄉","芎林鄉","寶山鄉","北埔鄉","峨眉鄉","尖石鄉","五峰鄉"],
+    "苗栗縣": ["苗栗市","苑裡鎮","通霄鎮","竹南鎮","頭份市","後龍鎮","卓蘭鎮","大湖鄉","公館鄉","銅鑼鄉","南庄鄉","頭屋鄉","三義鄉","西湖鄉","造橋鄉","三灣鄉","獅潭鄉","泰安鄉"],
+    "彰化縣": ["彰化市","鹿港鎮","和美鎮","線西鄉","伸港鄉","福興鄉","秀水鄉","花壇鄉","芬園鄉","員林市","溪湖鎮","田中鎮","大村鄉","埔鹽鄉","埔心鄉","永靖鄉","社頭鄉","二水鄉","北斗鎮","二林鎮","田尾鄉","埤頭鄉","芳苑鄉","大城鄉","竹塘鄉","溪州鄉"],
+    "南投縣": ["南投市","埔里鎮","草屯鎮","竹山鎮","集集鎮","名間鄉","鹿谷鄉","中寮鄉","魚池鄉","國姓鄉","水里鄉","信義鄉","仁愛鄉"],
+    "雲林縣": ["斗六市","斗南鎮","虎尾鎮","西螺鎮","土庫鎮","北港鎮","古坑鄉","大埤鄉","莿桐鄉","林內鄉","二崙鄉","崙背鄉","麥寮鄉","東勢鄉","褒忠鄉","臺西鄉","元長鄉","四湖鄉","口湖鄉","水林鄉"],
+    "嘉義市": ["東區","西區"],
+    "嘉義縣": ["太保市","朴子市","布袋鎮","大林鎮","民雄鄉","溪口鄉","新港鄉","六腳鄉","東石鄉","義竹鄉","鹿草鄉","水上鄉","中埔鄉","竹崎鄉","梅山鄉","番路鄉","大埔鄉","阿里山鄉"],
+    "屏東縣": ["屏東市","潮州鎮","東港鎮","恆春鎮","萬丹鄉","長治鄉","麟洛鄉","九如鄉","里港鄉","鹽埔鄉","高樹鄉","萬巒鄉","內埔鄉","竹田鄉","新埤鄉","枋寮鄉","新園鄉","崁頂鄉","林邊鄉","南州鄉","佳冬鄉","琉球鄉","車城鄉","滿州鄉","枋山鄉","三地門鄉","霧臺鄉","瑪家鄉","泰武鄉","來義鄉","春日鄉","獅子鄉","牡丹鄉"],
+    "宜蘭縣": ["宜蘭市","羅東鎮","蘇澳鎮","頭城鎮","礁溪鄉","壯圍鄉","員山鄉","冬山鄉","五結鄉","三星鄉","大同鄉","南澳鄉"],
+    "花蓮縣": ["花蓮市","鳳林鎮","玉里鎮","新城鄉","吉安鄉","壽豐鄉","光復鄉","豐濱鄉","瑞穗鄉","富里鄉","秀林鄉","萬榮鄉","卓溪鄉"],
+    "臺東縣": ["臺東市","成功鎮","關山鎮","卑南鄉","鹿野鄉","池上鄉","東河鄉","長濱鄉","太麻里鄉","大武鄉","綠島鄉","海端鄉","延平鄉","金峰鄉","達仁鄉","蘭嶼鄉"],
+    "澎湖縣": ["馬公市","湖西鄉","白沙鄉","西嶼鄉","望安鄉","七美鄉"],
+    "金門縣": ["金城鎮","金湖鎮","金沙鎮","金寧鄉","烈嶼鄉","烏坵鄉"],
+    "連江縣": ["南竿鄉","北竿鄉","莒光鄉","東引鄉"]
+  };
+
+  var cityAliases = {
+    "Taipei City":"臺北市","New Taipei City":"新北市","Taoyuan City":"桃園市","Taichung City":"臺中市",
+    "Tainan City":"臺南市","Kaohsiung City":"高雄市","Keelung City":"基隆市","Hsinchu City":"新竹市",
+    "Hsinchu County":"新竹縣","Miaoli County":"苗栗縣","Changhua County":"彰化縣","Nantou County":"南投縣",
+    "Yunlin County":"雲林縣","Chiayi City":"嘉義市","Chiayi County":"嘉義縣","Pingtung County":"屏東縣",
+    "Yilan County":"宜蘭縣","Hualien County":"花蓮縣","Taitung County":"臺東縣","Penghu County":"澎湖縣",
+    "Kinmen County":"金門縣","Lienchiang County":"連江縣"
   };
 
   function safe(value) {
@@ -132,6 +172,53 @@
     }[region] || "台灣";
   }
 
+  function normalizeAdminText(value) {
+    return String(value || "").trim().replace(/台/g, "臺").replace(/\s+/g, "");
+  }
+
+  function cityFromTags(tags) {
+    var candidates = [
+      tags["addr:city"], tags["addr:county"], tags["is_in:city"], tags["is_in:county"], tags["is_in"]
+    ].filter(Boolean);
+
+    for (var i = 0; i < candidates.length; i += 1) {
+      var raw = String(candidates[i]).trim();
+      if (cityAliases[raw]) return cityAliases[raw];
+      var normalized = normalizeAdminText(raw);
+      var cities = Object.keys(adminDivisions);
+      for (var j = 0; j < cities.length; j += 1) {
+        if (normalized.indexOf(normalizeAdminText(cities[j])) !== -1) return cities[j];
+      }
+    }
+    return "";
+  }
+
+  function districtFromTags(tags, city) {
+    var candidates = [
+      tags["addr:district"], tags["is_in:district"], tags["addr:borough"], tags["addr:subdistrict"]
+    ].filter(Boolean);
+    var districts = adminDivisions[city] || [];
+
+    for (var i = 0; i < candidates.length; i += 1) {
+      var normalized = normalizeAdminText(candidates[i]);
+      for (var j = 0; j < districts.length; j += 1) {
+        if (normalized.indexOf(normalizeAdminText(districts[j])) !== -1) return districts[j];
+      }
+      if (candidates[i]) return String(candidates[i]).trim();
+    }
+    return "";
+  }
+
+  function inferDistrictFromAddress(city, address, current) {
+    if (current) return current;
+    var normalized = normalizeAdminText(address);
+    var districts = adminDivisions[city] || [];
+    for (var i = 0; i < districts.length; i += 1) {
+      if (normalized.indexOf(normalizeAdminText(districts[i])) !== -1) return districts[i];
+    }
+    return "";
+  }
+
   function formatAddress(tags) {
     var parts = [
       tags["addr:city"],
@@ -175,12 +262,17 @@
     if (!lat || !lon || !tags.name) return null;
 
     var price = getPrice(tags);
+    var address = formatAddress(tags);
+    var city = cityFromTags(tags);
+    var district = inferDistrictFromAddress(city, address, districtFromTags(tags, city));
     return {
       id: el.type + "-" + el.id,
       name: tags.name,
       lat: Number(lat),
       lon: Number(lon),
-      address: formatAddress(tags),
+      address: address,
+      city: city,
+      district: district,
       region: regionFromCoords(Number(lat), Number(lon)),
       cuisine: tags.cuisine || "",
       openingHours: tags.opening_hours || "營業時間待確認",
@@ -264,6 +356,7 @@
     dom.reloadPlaces.disabled = false;
 
     populateBookingVenues();
+    populateDistrictFilter();
     applyFilters();
   }
 
@@ -310,6 +403,7 @@
     state.nearbyLoaded = true;
     updateDistances();
     populateBookingVenues();
+    populateDistrictFilter();
     applyFilters();
 
     var nearbyCount = state.places.filter(function (place) {
@@ -375,9 +469,59 @@
     });
   }
 
+  function populateDistrictFilter() {
+    if (!dom.cityFilter || !dom.districtFilter) return;
+    var city = dom.cityFilter.value;
+    if (city === "all") {
+      dom.districtFilter.innerHTML = '<option value="all">請先選縣市</option>';
+      dom.districtFilter.disabled = true;
+      return;
+    }
+
+    var districts = adminDivisions[city] || [];
+    var counts = {};
+    state.places.forEach(function (place) {
+      if (normalizeAdminText(place.city) !== normalizeAdminText(city)) return;
+      if (place.district) counts[place.district] = (counts[place.district] || 0) + 1;
+    });
+
+    dom.districtFilter.disabled = false;
+    dom.districtFilter.innerHTML = '<option value="all">全 ' + safe(city) + '</option>' +
+      districts.map(function (district) {
+        var count = counts[district] || 0;
+        return '<option value="' + safe(district) + '">' + safe(district) + (count ? " (" + count + ")" : "") + '</option>';
+      }).join("");
+  }
+
+  function updateMapAreaLabel() {
+    if (!dom.mapAreaTitle || !dom.mapAreaSubtitle) return;
+    var city = dom.cityFilter ? dom.cityFilter.value : "all";
+    var district = dom.districtFilter ? dom.districtFilter.value : "all";
+    var title = "全台烤肉地圖";
+
+    if (city !== "all") title = city + "烤肉地圖";
+    if (city !== "all" && district !== "all") title = city + " " + district + "烤肉地圖";
+
+    dom.mapAreaTitle.textContent = title;
+    dom.mapAreaSubtitle.textContent = state.filtered.length + " 間符合條件的店家";
+  }
+
+  function fitFilteredResults() {
+    if (!state.map || !state.filtered.length) return;
+    var points = state.filtered.slice(0, 300).map(function (place) {
+      return [place.lat, place.lon];
+    });
+    if (points.length === 1) {
+      state.map.setView(points[0], 15);
+      return;
+    }
+    state.map.fitBounds(points, { padding: [38, 38], maxZoom: 14 });
+  }
+
   function matchesFilters(place) {
     var keyword = dom.searchInput.value.trim().toLowerCase();
-    var region = dom.regionFilter.value;
+    var city = dom.cityFilter ? dom.cityFilter.value : "all";
+    var district = dom.districtFilter ? dom.districtFilter.value : "all";
     var price = dom.priceFilter.value;
 
     var haystack = [
@@ -387,12 +531,16 @@
       place.features.join(" ")
     ].join(" ").toLowerCase();
 
+    var cityHaystack = normalizeAdminText((place.city || "") + " " + (place.address || ""));
+    var districtHaystack = normalizeAdminText((place.district || "") + " " + (place.address || ""));
+
     return (!keyword || haystack.indexOf(keyword) !== -1) &&
-      (region === "all" || place.region === region) &&
+      (city === "all" || cityHaystack.indexOf(normalizeAdminText(city)) !== -1) &&
+      (district === "all" || districtHaystack.indexOf(normalizeAdminText(district)) !== -1) &&
       (price === "all" || place.priceTier === price);
   }
 
-  function applyFilters() {
+  function applyFilters(fitMap) {
     state.filtered = state.places.filter(matchesFilters);
 
     if (dom.sortFilter && dom.sortFilter.value === "nearby" && state.userLocation) {
@@ -410,6 +558,8 @@
     dom.resultCount.textContent = state.filtered.length + " 間";
     renderList();
     renderMarkers();
+    updateMapAreaLabel();
+    if (fitMap) fitFilteredResults();
   }
 
   function renderList() {
@@ -480,13 +630,8 @@
       bounds.push([place.lat, place.lon]);
     });
 
-    if (state.userLocation && dom.sortFilter && dom.sortFilter.value === "nearby") {
-      state.map.setView([state.userLocation.lat, state.userLocation.lon], 12);
-    } else if (bounds.length && state.filtered.length < 80) {
-      state.map.fitBounds(bounds, { padding: [34, 34], maxZoom: 13 });
-    } else {
-      state.map.setView([23.72, 120.96], 7);
-    }
+    // View movement is controlled by location, administrative filters, or the
+    // explicit "顯示全部結果" button. Re-rendering markers should not steal the map view.
   }
 
   function selectVenue(id, zoom) {
@@ -566,10 +711,32 @@
     }
   });
 
-  [dom.searchInput, dom.regionFilter, dom.priceFilter, dom.sortFilter].forEach(function (control) {
+  [dom.searchInput, dom.priceFilter, dom.sortFilter].forEach(function (control) {
     if (!control) return;
     control.addEventListener(control === dom.searchInput ? "input" : "change", applyFilters);
   });
+
+  if (dom.cityFilter) {
+    dom.cityFilter.addEventListener("change", function () {
+      populateDistrictFilter();
+      applyFilters(true);
+    });
+  }
+  if (dom.districtFilter) {
+    dom.districtFilter.addEventListener("change", function () {
+      applyFilters(true);
+    });
+  }
+  if (dom.resetAreaFilters) {
+    dom.resetAreaFilters.addEventListener("click", function () {
+      dom.cityFilter.value = "all";
+      populateDistrictFilter();
+      applyFilters(true);
+    });
+  }
+  if (dom.fitResults) {
+    dom.fitResults.addEventListener("click", fitFilteredResults);
+  }
 
   dom.reloadPlaces.addEventListener("click", loadPlaces);
   dom.availabilityForm.addEventListener("submit", renderAvailability);

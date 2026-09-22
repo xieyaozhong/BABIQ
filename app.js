@@ -2178,6 +2178,16 @@
     ctx.fillStyle = "#8f8075";
     ctx.fillText("邊火慢烤", grillRect.x + 8, grillRect.y + 16);
 
+    var riskRatio = Math.max(0, Math.min(1, game.fireDanger / 4));
+    ctx.fillStyle = "#251612";
+    ctx.fillRect(grillRect.x + grillRect.w - 132, grillRect.y + 8, 118, 12);
+    ctx.fillStyle = riskRatio < 0.55 ? "#6f9e62" : (riskRatio < 0.82 ? "#d7a344" : "#e95c45");
+    ctx.fillRect(grillRect.x + grillRect.w - 130, grillRect.y + 10, 114 * riskRatio, 8);
+    ctx.fillStyle = "#cdb7a8";
+    ctx.font = "bold 8px ui-monospace, monospace";
+    ctx.textAlign = "right";
+    ctx.fillText("FIRE RISK", grillRect.x + grillRect.w - 14, grillRect.y + 31);
+
     ctx.strokeStyle = "#706157";
     ctx.lineWidth = 4;
     for (var gx = grillRect.x + 14; gx < grillRect.x + grillRect.w - 8; gx += 34) {

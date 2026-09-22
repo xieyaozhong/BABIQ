@@ -699,3 +699,150 @@ footer strong{color:#fff;letter-spacing:.14em}
     overflow:auto;
   }
 }
+
+
+/* Restaurant discovery list — map removed */
+.discovery-section{
+  max-width:1480px;
+  padding-left:clamp(18px,4vw,64px);
+  padding-right:clamp(18px,4vw,64px);
+}
+
+.discovery-shell{
+  width:100%;
+  border:1px solid #312720;
+  border-radius:24px;
+  overflow:hidden;
+  background:#171310;
+}
+
+.discovery-filters{
+  display:grid;
+  grid-template-columns:minmax(220px,1.6fr) repeat(4,minmax(130px,1fr)) auto auto auto;
+  align-items:end;
+  gap:10px;
+  width:100%;
+  padding:14px;
+  border:0;
+  border-bottom:1px solid #302720;
+  background:#181410;
+}
+
+.discovery-filters label{
+  min-width:0;
+}
+
+.discovery-filters input,
+.discovery-filters select,
+.discovery-filters .btn{
+  width:100%;
+  max-width:100%;
+  min-height:42px;
+}
+
+.discovery-status{
+  grid-column:1/-1;
+  padding:2px 4px 0;
+}
+
+.results-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:18px 20px;
+  border-bottom:1px solid #302720;
+}
+
+.results-head strong{
+  display:block;
+  font-size:18px;
+}
+
+.results-head div span{
+  display:block;
+  margin-top:5px;
+  color:#9f9187;
+  font-size:12px;
+}
+
+.results-head > span{
+  flex:0 0 auto;
+  padding:7px 10px;
+  border-radius:999px;
+  background:#2c211b;
+  color:#e8d8cc;
+  font-size:12px;
+  font-weight:800;
+}
+
+.discovery-list{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  width:100%;
+  max-height:none;
+  overflow:visible;
+  padding:14px;
+}
+
+.discovery-list .venue-card{
+  height:100%;
+  margin:0;
+  padding:16px;
+}
+
+.discovery-list .venue-actions-links{
+  margin-top:auto;
+}
+
+.discovery-list .venue-action{
+  min-height:40px;
+}
+
+@media (max-width:1180px){
+  .discovery-filters{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .discovery-filters label:first-child{
+    grid-column:1/-1;
+  }
+  .discovery-list{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:760px){
+  .discovery-section{
+    padding-left:12px;
+    padding-right:12px;
+  }
+  .discovery-shell{
+    border-radius:18px;
+  }
+  .discovery-filters{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    padding:10px;
+  }
+  .discovery-filters label:first-child,
+  .discovery-status{
+    grid-column:1/-1;
+  }
+  .results-head{
+    padding:15px 14px;
+  }
+  .discovery-list{
+    grid-template-columns:1fr;
+    padding:10px;
+  }
+}
+
+@media (max-width:480px){
+  .discovery-filters{
+    grid-template-columns:1fr;
+  }
+  .discovery-filters label:first-child,
+  .discovery-status{
+    grid-column:auto;
+  }
+}

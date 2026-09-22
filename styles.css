@@ -1236,3 +1236,6 @@ a.price-source:hover{
 @media (prefers-reduced-motion:reduce){
   .location-loader{animation:none}
 }
+
+
+body.location-guide-open{overflow:hidden}

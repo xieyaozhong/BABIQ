@@ -1540,6 +1540,9 @@
   var heatEl = document.getElementById("heatLevel");
   var messageEl = document.getElementById("gameMessage");
   var guideEl = document.getElementById("ingredientGuide");
+  var gameResultCard = document.getElementById("gameResultCard");
+  var gameResultTitle = document.getElementById("gameResultTitle");
+  var gameResultSummary = document.getElementById("gameResultSummary");
 
   var grillRect = { x: 105, y: 72, w: 520, h: 300 };
   var hotRect = { x: 220, y: 132, w: 290, h: 185 };
@@ -1589,9 +1592,9 @@
   '<div class="ingredient-secret"><strong>??? 隱藏食材</strong><span>共 ' + hiddenIngredients.length + ' 種，低機率出現</span></div>';
 
   var difficulty = {
-    easy: { tolerance:1.35, speed:0.88, spawn:8.3, maxTray:6, eventGap:28 },
-    normal: { tolerance:1, speed:1, spawn:6.8, maxTray:6, eventGap:23 },
-    hard: { tolerance:0.78, speed:1.12, spawn:5.4, maxTray:7, eventGap:18 }
+    easy: { tolerance:1.35, speed:0.88, spawn:7.4, maxTray:6, eventGap:22 },
+    normal: { tolerance:1, speed:1, spawn:6.1, maxTray:6, eventGap:17 },
+    hard: { tolerance:0.78, speed:1.12, spawn:4.9, maxTray:7, eventGap:13 }
   };
 
   var game = {
@@ -1602,7 +1605,7 @@
     bestStreak:0,
     startedAt:0,
     lastFrame:0,
-    remaining:180,
+    remaining:120,
     pieces:[],
     nextId:1,
     spawnTimer:0,
@@ -1612,7 +1615,19 @@
     eventUsedWater:false,
     animationId:null,
     pointer:null,
-    smoke:[]
+    smoke:[],
+    scorePopups:[],
+    perfects:0,
+    goods:0,
+    burntServed:0,
+    rawServed:0,
+    hiddenServed:0,
+    fires:0,
+    elderHelps:0,
+    fireDanger:0,
+    elderTargetId:null,
+    elderNextAction:0,
+    title:""
   };
 
   function getCfg() {
@@ -1745,7 +1760,7 @@
     game.served = 0;
     game.streak = 0;
     game.bestStreak = 0;
-    game.remaining = 180;
+    game.remaining = 120;
     game.pieces = [];
     game.nextId = 1;
     game.spawnTimer = 0;
@@ -1754,6 +1769,19 @@
     game.eventUsedWater = false;
     game.pointer = null;
     game.smoke = [];
+    game.scorePopups = [];
+    game.perfects = 0;
+    game.goods = 0;
+    game.burntServed = 0;
+    game.rawServed = 0;
+    game.hiddenServed = 0;
+    game.fires = 0;
+    game.elderHelps = 0;
+    game.fireDanger = 0;
+    game.elderTargetId = null;
+    game.elderNextAction = 0;
+    game.title = "";
+    if (gameResultCard) gameResultCard.hidden = true;
     if (game.animationId) cancelAnimationFrame(game.animationId);
     game.animationId = null;
     updateHud();
@@ -1765,7 +1793,7 @@
     game.running = true;
     game.startedAt = performance.now();
     game.lastFrame = game.startedAt;
-    game.nextEventAt = 18 + Math.random() * 10;
+    game.nextEventAt = 10 + Math.random() * 7;
     seedInitialTray();
     startButton.textContent = "重新開始";
     difficultySelect.disabled = true;
@@ -1784,6 +1812,9 @@
     if (game.eventType === "flare") mult *= 1.72;
     if (game.eventType === "grease") mult *= 1.48;
     if (game.eventType === "wind") mult *= 0.67;
+    if (game.eventType === "rain") mult *= 0.52;
+    if (game.eventType === "ember") mult *= 1.28;
+    if (game.eventType === "fire") mult *= 2.3;
     mult *= 1 + Math.min(0.45, activeCharcoalCount() * 0.16);
     return mult;
   }
@@ -1806,27 +1837,56 @@
     var type = forcedType;
     if (!type) {
       var roll = Math.random();
-      if (roll < 0.42) type = "flare";
-      else if (roll < 0.72) type = "grease";
-      else type = "wind";
+      if (roll < 0.18) type = "flare";
+      else if (roll < 0.34) type = "grease";
+      else if (roll < 0.48) type = "wind";
+      else if (roll < 0.60) type = "rain";
+      else if (roll < 0.73) type = "rush";
+      else if (roll < 0.84) type = "refill";
+      else if (roll < 0.96) type = "elder";
+      else type = "ember";
     }
 
     game.eventType = type;
     game.eventUsedWater = false;
-    var duration = type === "wind" ? 7 : 6;
+    var duration = 6;
+    if (type === "wind" || type === "rain") duration = 7;
+    if (type === "rush") duration = 8;
+    if (type === "elder") duration = 6.5;
+    if (type === "fire") duration = 8;
+
     game.eventEndsAt = elapsed + duration;
-    game.nextEventAt = elapsed + getCfg().eventGap + Math.random() * 9;
-    extinguishButton.disabled = type === "wind";
+    game.nextEventAt = elapsed + getCfg().eventGap + Math.random() * 7;
+    extinguishButton.disabled = ["flare","grease","ember","fire"].indexOf(type) === -1;
 
     if (type === "flare") messageEl.textContent = "🔥 炭火失控！所有食材加速熟成";
     if (type === "grease") messageEl.textContent = "💥 油脂滴落！火力突然暴增";
     if (type === "wind") messageEl.textContent = "💨 風勢突變！火力下降";
+    if (type === "rain") messageEl.textContent = "🌧 突然下雨！炭火變弱，熟成速度下降";
+    if (type === "rush") messageEl.textContent = "🔔 客人催單！8 秒內成功出餐可獲得 35% 加成";
+    if (type === "refill") {
+      messageEl.textContent = "🍽 隔壁桌突然加菜！備料盤多了新食材";
+      spawnPiece(false);
+      spawnPiece(false);
+    }
+    if (type === "ember") messageEl.textContent = "✨ 炭火爆裂！短時間火力提升";
+    if (type === "elder") {
+      game.elderHelps += 1;
+      game.elderNextAction = elapsed + 0.7;
+      messageEl.textContent = "👋 長輩出手了：「哎呀這個要這樣烤啦！」";
+    }
+    if (type === "fire") {
+      game.fires += 1;
+      game.score = Math.max(0, game.score - 90);
+      messageEl.textContent = "🚨 烤網失火！燒焦食物放太久引發火災，-90 分";
+    }
   }
 
   function clearEvent(message) {
     game.eventType = null;
     game.eventEndsAt = 0;
     game.eventUsedWater = false;
+    game.elderTargetId = null;
     extinguishButton.disabled = true;
     if (message) messageEl.textContent = message;
   }
@@ -1886,16 +1946,108 @@
     return Math.max(0.48, 1 - iceCount * 0.22);
   }
 
+  function addScorePopup(score, label) {
+    game.scorePopups.push({
+      x:serveRect.x + serveRect.w / 2,
+      y:serveRect.y + serveRect.h / 2 + (Math.random() - 0.5) * 45,
+      score:score,
+      label:label || "",
+      life:1.6,
+      maxLife:1.6
+    });
+  }
+
+  function updateScorePopups(dt) {
+    game.scorePopups.forEach(function (popup) {
+      popup.y -= 34 * dt;
+      popup.life -= dt;
+    });
+    game.scorePopups = game.scorePopups.filter(function (popup) { return popup.life > 0; });
+  }
+
+  function updateFireRisk(dt, elapsed) {
+    var burntCount = game.pieces.filter(function (piece) {
+      return piece.zone === "grill" && !piece.item.material && piece.burnt;
+    }).length;
+
+    if (burntCount >= 2) {
+      game.fireDanger += dt * (burntCount - 1) * 1.25;
+    } else {
+      game.fireDanger = Math.max(0, game.fireDanger - dt * 0.8);
+    }
+
+    if (burntCount >= 4) game.fireDanger = Math.max(game.fireDanger, 4.2);
+
+    if (game.fireDanger >= 4 && game.eventType !== "fire") {
+      game.fireDanger = 0;
+      triggerEvent(elapsed, "fire");
+    }
+  }
+
+  function elderCandidate() {
+    var candidates = game.pieces.filter(function (piece) {
+      return piece.zone === "grill" && !piece.item.material;
+    });
+    if (!candidates.length) return null;
+
+    candidates.sort(function (a, b) {
+      var ap = pieceProgress(a);
+      var bp = pieceProgress(b);
+      var aNeedTurn = a.turns < (a.item.turns || 0) ? 1 : 0;
+      var bNeedTurn = b.turns < (b.item.turns || 0) ? 1 : 0;
+      var aUrgency = (a.burnt ? 5 : 0) + Math.max(0, ap - 0.75) * 3 + aNeedTurn;
+      var bUrgency = (b.burnt ? 5 : 0) + Math.max(0, bp - 0.75) * 3 + bNeedTurn;
+      return bUrgency - aUrgency;
+    });
+    return candidates[0];
+  }
+
+  function updateElder(elapsed) {
+    if (game.eventType !== "elder") {
+      game.elderTargetId = null;
+      return;
+    }
+
+    var piece = elderCandidate();
+    game.elderTargetId = piece ? piece.id : null;
+    if (!piece || elapsed < game.elderNextAction) return;
+    game.elderNextAction = elapsed + 1.15;
+
+    var required = piece.item.turns || 0;
+    var progress = pieceProgress(piece);
+
+    if (required > piece.turns) {
+      var ideal = (piece.turns + 1) / (required + 1);
+      if (Math.abs(progress - ideal) <= 0.22 || progress > ideal) {
+        piece.turns += 1;
+        piece.techniqueError = Math.max(0, piece.techniqueError - 0.12);
+        messageEl.textContent = "👋 長輩：「現在翻！你看，這樣才會漂亮」";
+        return;
+      }
+    }
+
+    if (progress >= 0.92 && progress <= 1.12) {
+      messageEl.textContent = "👋 長輩：「這片差不多囉，可以準備出餐」";
+    } else if (currentHeatZone(piece) !== piece.item.preferred) {
+      messageEl.textContent = "👋 長輩：「這個不要放那邊，" +
+        (piece.item.preferred === "center" ? "移中間大火啦」" : "放旁邊慢慢烤啦」");
+    } else {
+      messageEl.textContent = "👋 長輩：「不要一直翻，先等一下啦」";
+    }
+  }
+
   function gameLoop(now) {
     if (!game.running) return;
 
     var dt = Math.min(0.06, Math.max(0, (now - game.lastFrame) / 1000));
     game.lastFrame = now;
     var elapsed = (now - game.startedAt) / 1000;
-    game.remaining = Math.max(0, 180 - elapsed);
+    game.remaining = Math.max(0, 120 - elapsed);
 
     if (!game.eventType && elapsed >= game.nextEventAt) triggerEvent(elapsed);
-    if (game.eventType && elapsed >= game.eventEndsAt) clearEvent("火力恢復正常");
+    if (game.eventType && elapsed >= game.eventEndsAt) clearEvent("事件結束，繼續顧火");
+    updateFireRisk(dt, elapsed);
+    updateElder(elapsed);
 
     var cfg = getCfg();
     var globalRate = cfg.speed * heatMultiplier() * materialHeatModifier();
@@ -1917,6 +2069,7 @@
 
     updateMaterials(dt, elapsed);
     updateSmoke(dt);
+    updateScorePopups(dt);
 
     game.spawnTimer += dt;
     if (game.spawnTimer >= cfg.spawn) {
@@ -1944,13 +2097,41 @@
     heatEl.textContent = heatPercent() + "%";
   }
 
+  function performanceTitle() {
+    var score = Math.max(0, Math.round(game.score));
+    if (game.fires >= 2) return "稱號：烈焰失控王";
+    if (game.burntServed >= 3) return "稱號：焦炭藝術家";
+    if (game.elderHelps >= 3 && game.perfects <= 1) return "稱號：長輩監督學徒";
+    if (game.hiddenServed >= 2 && score >= 1200) return "稱號：祕味獵人";
+    if (game.perfects >= 5 && score >= 2000) return "稱號：炭火之神";
+    if (score >= 1800) return "稱號：燒肉仙人";
+    if (score >= 1250) return "稱號：火候職人";
+    if (score >= 800) return "稱號：烤網掌門";
+    if (score >= 450) return "稱號：熟度管理員";
+    return "稱號：烤肉見習生";
+  }
+
   function finishGame() {
     game.running = false;
     game.pointer = null;
     difficultySelect.disabled = false;
     extinguishButton.disabled = true;
-    messageEl.textContent = "時間到！本局 " + Math.max(0, Math.round(game.score)) +
-      " 分｜成功出餐 " + game.served + " 份｜最高連續好評 " + game.bestStreak;
+    game.title = performanceTitle();
+
+    var score = Math.max(0, Math.round(game.score));
+    var summary = "總分 " + score +
+      "｜出餐 " + game.served +
+      "｜PERFECT " + game.perfects +
+      "｜烤焦 " + game.burntServed +
+      "｜火災 " + game.fires +
+      "｜長輩出手 " + game.elderHelps + " 次";
+
+    messageEl.textContent = "時間到！" + game.title + "｜" + summary;
+    if (gameResultCard) {
+      gameResultCard.hidden = false;
+      if (gameResultTitle) gameResultTitle.textContent = game.title;
+      if (gameResultSummary) gameResultSummary.textContent = summary;
+    }
     drawScene();
   }
 
@@ -2012,7 +2193,7 @@
       ctx.stroke();
     }
 
-    var fireColor = game.eventType === "flare" || game.eventType === "grease" ? "#ff7a28" : "#a83920";
+    var fireColor = ["flare","grease","ember","fire"].indexOf(game.eventType) !== -1 ? "#ff7a28" : "#a83920";
     ctx.fillStyle = fireColor;
     for (var cx = grillRect.x + 18; cx < grillRect.x + grillRect.w - 20; cx += 48) {
       ctx.fillRect(cx, grillRect.y + grillRect.h - 20, 30, 8 + ((cx / 48) % 3) * 3);
@@ -2028,6 +2209,25 @@
     } else if (game.eventType === "wind") {
       ctx.font = "30px serif";
       ctx.fillText("💨", grillRect.x + 10, grillRect.y + 48);
+    } else if (game.eventType === "rain") {
+      ctx.font = "28px serif";
+      ctx.fillText("🌧", grillRect.x + 10, grillRect.y + 48);
+    } else if (game.eventType === "rush") {
+      ctx.font = "28px serif";
+      ctx.fillText("🔔", serveRect.x + 46, serveRect.y + 55);
+    } else if (game.eventType === "ember") {
+      ctx.font = "28px serif";
+      ctx.fillText("✨", grillRect.x + 10, grillRect.y + 48);
+    } else if (game.eventType === "fire") {
+      ctx.fillStyle = "rgba(255,76,20,.16)";
+      ctx.fillRect(grillRect.x, grillRect.y, grillRect.w, grillRect.h);
+      ctx.font = "34px serif";
+      for (var fx = grillRect.x + 25; fx < grillRect.x + grillRect.w - 30; fx += 74) {
+        ctx.fillText("🔥", fx, grillRect.y + grillRect.h - 42);
+      }
+      ctx.fillStyle = "#ffd3b0";
+      ctx.font = "bold 14px ui-monospace, monospace";
+      ctx.fillText("FIRE!", grillRect.x + grillRect.w - 58, grillRect.y + 24);
     }
   }
 
@@ -2134,6 +2334,58 @@
     }
   }
 
+  function drawScorePopups() {
+    game.scorePopups.forEach(function (popup) {
+      var alpha = Math.max(0, popup.life / popup.maxLife);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.textAlign = "center";
+      ctx.font = "bold 18px ui-monospace, monospace";
+      ctx.fillStyle = popup.score >= 0 ? "#9ff0aa" : "#ff8b83";
+      var sign = popup.score >= 0 ? "+" : "";
+      ctx.fillText(sign + popup.score, popup.x, popup.y);
+      if (popup.label) {
+        ctx.font = "bold 8px ui-monospace, monospace";
+        ctx.fillStyle = "#f4e8df";
+        ctx.fillText(popup.label, popup.x, popup.y + 14);
+      }
+      ctx.restore();
+    });
+  }
+
+  function drawElderHand() {
+    if (game.eventType !== "elder") return;
+    var target = game.pieces.find(function (piece) { return piece.id === game.elderTargetId; });
+    var tx = target ? target.x : grillRect.x + grillRect.w * 0.62;
+    var ty = target ? target.y : grillRect.y + grillRect.h * 0.48;
+
+    ctx.save();
+    ctx.font = "58px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.translate(Math.min(canvas.width - 48, tx + 68), Math.max(54, ty - 58));
+    ctx.rotate(-0.45);
+    ctx.fillText("👇", 0, 0);
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = "rgba(25,17,13,.92)";
+    ctx.strokeStyle = "#b88358";
+    ctx.lineWidth = 2;
+    var bx = Math.min(canvas.width - 250, Math.max(18, tx - 100));
+    var by = Math.max(18, ty - 105);
+    ctx.fillRect(bx, by, 235, 42);
+    ctx.strokeRect(bx, by, 235, 42);
+    ctx.fillStyle = "#ffe0c2";
+    ctx.font = "bold 11px ui-monospace, monospace";
+    ctx.textAlign = "left";
+    ctx.fillText("長輩：火候不是這樣顧的啦！", bx + 10, by + 17);
+    ctx.fillStyle = "#cdb4a2";
+    ctx.font = "9px ui-monospace, monospace";
+    ctx.fillText("我示範幾秒，你看清楚", bx + 10, by + 32);
+    ctx.restore();
+  }
+
   function drawScene() {
     drawPixelBackground();
     game.pieces.filter(function (p) { return !(game.pointer && p.id === game.pointer.id); }).forEach(drawPiece);
@@ -2142,6 +2394,8 @@
       if (dragged) drawPiece(dragged);
     }
     drawSmoke();
+    drawScorePopups();
+    drawElderHand();
     drawDragFeedback();
 
     if (!game.running) {
@@ -2158,6 +2412,11 @@
         canvas.width / 2,
         258
       );
+      if (game.remaining <= 0 && game.title) {
+        ctx.fillStyle = "#ffe0a8";
+        ctx.font = "bold 17px ui-monospace, monospace";
+        ctx.fillText(game.title.replace("稱號：",""), canvas.width / 2, 290);
+      }
     }
   }
 
@@ -2193,6 +2452,7 @@
     if (piece.item.material) {
       game.score = Math.max(0, game.score - 60);
       game.streak = 0;
+      addScorePopup(-60, "非食材");
       messageEl.textContent = "❌ " + piece.item.name + " 不是食材，出餐扣 60 分";
       removePiece(piece.id);
       setTimeout(function () { if (game.running) spawnPiece(true); }, 260);
@@ -2212,10 +2472,12 @@
     if (piece.burnt || progress > 1.3) {
       score = -Math.round(piece.item.base * 0.55);
       result = "烤焦出餐 " + score;
+      game.burntServed += 1;
       game.streak = 0;
     } else if (progress < 0.74) {
       score = -30;
       result = "還沒熟 -30";
+      game.rawServed += 1;
       game.streak = 0;
     } else if (!techniqueReady) {
       score = Math.round(piece.item.base * 0.25);
@@ -2226,11 +2488,13 @@
       game.bestStreak = Math.max(game.bestStreak, game.streak);
       score = Math.round(piece.item.base * (1.7 + Math.min(0.8, game.streak * 0.08)));
       result = "PERFECT +" + score;
+      game.perfects += 1;
     } else if (error <= toleranceRatio && techniqueQuality > 0.4) {
       game.streak += 1;
       game.bestStreak = Math.max(game.bestStreak, game.streak);
       score = Math.round(piece.item.base * (1 + placementQuality * 0.3));
       result = "GOOD +" + score;
+      game.goods += 1;
     } else {
       score = Math.round(piece.item.base * 0.38);
       result = "可出餐 +" + score;
@@ -2239,11 +2503,18 @@
 
     if (piece.item.hidden && score > 0) {
       score = Math.round(score * 1.35);
+      game.hiddenServed += 1;
       result += "｜隱藏加成";
+    }
+
+    if (game.eventType === "rush" && score > 0) {
+      score = Math.round(score * 1.35);
+      result += "｜催單 +35%";
     }
 
     game.score = Math.max(0, game.score + score);
     game.served += 1;
+    addScorePopup(score, result.split("｜")[0]);
     messageEl.textContent = piece.item.emoji + " " + piece.item.name + "｜" + result;
     removePiece(piece.id);
     setTimeout(function () { if (game.running) spawnPiece(false); }, 260);
@@ -2408,6 +2679,7 @@
     if (game.eventUsedWater) return;
     game.eventUsedWater = true;
     game.score = Math.max(0, game.score - 20);
+    if (game.eventType === "fire") game.fireDanger = 0;
     clearEvent("💧 火勢壓下來了，代價 -20 分");
     updateHud();
   });

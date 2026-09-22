@@ -311,10 +311,10 @@
     <section id="game" class="section game-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">PIXEL BBQ CHALLENGE</p>
-          <h2>3 分鐘像素烤肉挑戰</h2>
+          <p class="eyebrow">PIXEL BBQ KITCHEN</p>
+          <h2>3 分鐘拖曳燒烤挑戰</h2>
         </div>
-        <p>看準熟度翻面；食材越難、時間窗越短，分數越高。小心炭火失控與突發事件</p>
+        <p>從備料盤把食材拖上烤網，利用有限空間安排位置與火力；烤好後再拖到出餐區完成料理</p>
       </div>
 
       <div class="game-layout">
@@ -322,11 +322,18 @@
           <div class="game-hud">
             <div><span>TIME</span><strong id="gameTime">03:00</strong></div>
             <div><span>SCORE</span><strong id="gameScore">0</strong></div>
-            <div><span>COMBO</span><strong id="gameCombo">x1</strong></div>
+            <div><span>SERVED</span><strong id="gameCombo">0</strong></div>
             <div><span>HEAT</span><strong id="heatLevel">100%</strong></div>
           </div>
 
-          <canvas id="bbqGame" width="720" height="420" aria-label="像素風格烤肉遊戲畫面"></canvas>
+          <div class="game-board-wrap">
+            <canvas id="bbqGame" width="800" height="520" aria-label="拖曳式像素燒烤遊戲，包含備料區、烤網與出餐區"></canvas>
+            <div class="game-board-hint">
+              <span>① 從備料盤拖上烤網</span>
+              <span>② 點一下烤網上的食材翻面／旋轉</span>
+              <span>③ 熟成後拖到右側出餐</span>
+            </div>
+          </div>
 
           <div class="game-controls">
             <button id="startGame" class="btn btn-primary" type="button">開始 3 分鐘挑戰</button>
@@ -340,20 +347,26 @@
               </select>
             </label>
           </div>
-          <p id="gameMessage" class="game-message" aria-live="polite">按下開始後，點擊烤網上的食材翻面</p>
+          <p id="gameMessage" class="game-message" aria-live="polite">開始後會先獲得一批隨機食材，拖曳到烤網開始料理</p>
         </div>
 
         <aside class="ingredient-card">
           <div class="ingredient-card-head">
-            <small>INGREDIENT GUIDE</small>
-            <h3>食材熟度表</h3>
+            <small>GRILLING GUIDE</small>
+            <h3>食材與烤法</h3>
+          </div>
+          <div class="cook-method-guide">
+            <div><b>🔥 中央高火</b><span>厚切牛排、骰子牛適合快速上色</span></div>
+            <div><b>🌤 邊火慢烤</b><span>魚、玉米、蔬菜比較不容易焦</span></div>
+            <div><b>↻ 翻面／旋轉</b><span>點一下烤網上的食材進行操作</span></div>
+            <div><b>▦ 空間碰撞</b><span>不同食材佔用不同烤網面積，不能重疊</span></div>
           </div>
           <div id="ingredientGuide" class="ingredient-guide"></div>
           <div class="event-list">
-            <strong>特殊事件</strong>
-            <p>🔥 炭火失控：短時間加速熟成</p>
-            <p>💨 風勢突變：火力下降</p>
-            <p>💥 油脂滴落：瞬間升溫並縮短翻面時間窗</p>
+            <strong>隨機內容</strong>
+            <p>✨ 隱藏食材：低機率出現，高分但烤法更嚴格</p>
+            <p>❓ 非食材材料：極低機率混入備料盤，可能改變火力或佔據烤網</p>
+            <p>💨 突發事件：風勢、油脂與炭火仍會改變整體熟成速度</p>
           </div>
         </aside>
       </div>
